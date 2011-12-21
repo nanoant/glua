@@ -27,23 +27,23 @@ g.glEnable(g.GL_LIGHT0)
 g.glShadeModel(g.GL_SMOOTH)
 
 -- set up the light
-g.glMaterial(g.GL_FRONT, g.GL_AMBIENT,   0, 0, 0, 1);
-g.glMaterial(g.GL_FRONT, g.GL_DIFFUSE,   1, 0, 0, 1);
-g.glMaterial(g.GL_FRONT, g.GL_SPECULAR,  1, 1, 1, 1);
-g.glMaterial(g.GL_FRONT, g.GL_SHININESS, 20);
-g.glLight(g.GL_LIGHT0,   g.GL_POSITION,  0, 0, 0, 0);
+g.glMaterial(g.GL_FRONT, g.GL_AMBIENT,   0, 0, 0, 1)
+g.glMaterial(g.GL_FRONT, g.GL_DIFFUSE,   1, 0, 0, 1)
+g.glMaterial(g.GL_FRONT, g.GL_SPECULAR,  1, 1, 1, 1)
+g.glMaterial(g.GL_FRONT, g.GL_SHININESS, 20)
+g.glLight(g.GL_LIGHT0,   g.GL_POSITION,  0, 0, 0, 0)
 
 -- called upon window resize & creation
 g.glutReshapeFunc(function(w, h)
   width, height = w, h
-  g.glViewport(0, 0, w, h);
+  g.glViewport(0, 0, w, h)
 
   g.glMatrixMode(g.GL_PROJECTION)
-  g.glLoadIdentity();
+  g.glLoadIdentity()
   g.gluPerspective(60, w / h, 0.2, 1000000)
   g.gluLookAt(0,  0, -1.5,
               0,  0,  0,
-              0,  1,  0);
+              0,  1,  0)
 
   g.glMatrixMode(g.GL_MODELVIEW)
 end)
