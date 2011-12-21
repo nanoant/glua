@@ -432,6 +432,20 @@ M.glGetString = function(what)
   return ffi.string(g.glGetString(what))
 end
 
+-- make glGetString return regular string
+M.glGenTextures = function(num, out)
+  num = num or 1
+  out = out or glUintv(num)
+  g.glGenTextures(num, out)
+  return out
+end
+M.glGenTexture = function()
+  return M.glGenTextures(1)[0]
+end
+M.glDeleteTexture = function(texture)
+  return M.glDeleteTextures(1, glUintv(1, texture))
+end
+
 -- light vaarg functions
 M.glMaterial = function(face, type, ...)
   return g.glMaterialfv(face, type, glFloatv(select('#', ...), ...))
@@ -439,6 +453,10 @@ end
 M.glLight = function(face, type, ...)
   return g.glLightfv(face, type, glFloatv(select('#', ...), ...))
 end
+
+-- removing type suffixes
+M.glMultMatrix = g.glMultMatrixf
+M.glRotate     = g.glRotatef
 
 setmetatable(M, { __index = g })
 

@@ -18,7 +18,7 @@ local width, height
 local buttons = {}
 
 -- set up background color
-g.glClearColor(0, 0, 255, 0)
+g.glClearColor(0, 0, 1, 0)
 
 -- enable depth test & lighting
 g.glEnable(g.GL_DEPTH_TEST)
@@ -32,6 +32,10 @@ g.glMaterial(g.GL_FRONT, g.GL_DIFFUSE,   1, 0, 0, 1)
 g.glMaterial(g.GL_FRONT, g.GL_SPECULAR,  1, 1, 1, 1)
 g.glMaterial(g.GL_FRONT, g.GL_SHININESS, 20)
 g.glLight(g.GL_LIGHT0,   g.GL_POSITION,  0, 0, 0, 0)
+
+-- prepare texture
+local texture = g.glGenTexture()
+g.glDeleteTexture(texture)
 
 -- called upon window resize & creation
 g.glutReshapeFunc(function(w, h)
@@ -52,8 +56,8 @@ end)
 local rotateCallback = g.glutIdleCallback(function()
   local m = g.glGet(g.GL_MODELVIEW_MATRIX)
   g.glLoadIdentity()
-  g.glRotatef(1, 0, 0, 1)
-  g.glMultMatrixf(m)
+  g.glRotate(1, 0, 0, 1)
+  g.glMultMatrix(m)
   g.glutPostRedisplay()
 end)
 
@@ -63,11 +67,11 @@ g.glutMotionFunc(function(x, y)
   if left and left.state == g.GLUT_DOWN then
     local m = g.glGet(g.GL_MODELVIEW_MATRIX)
     g.glLoadIdentity()
-    g.glRotatef(left.x - x, 0, -1, 0)
-    g.glRotatef(left.y - y, 1, 0, 0)
+    g.glRotate(left.x - x, 0, -1, 0)
+    g.glRotate(left.y - y, 1, 0, 0)
     left.x = x
     left.y = y
-    g.glMultMatrixf(m)
+    g.glMultMatrix(m)
     g.glutPostRedisplay()
   end
 end)
