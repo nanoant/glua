@@ -6,8 +6,7 @@ local ffi = require('ffi') -- FIXME: so far we require ffi here for creating non
 
 -- initialize display (note: glut module calls glutInit)
 g.glutInitDisplayMode(g.GLUT_RGBA + g.GLUT_DOUBLE + g.GLUT_DEPTH + g.GLUT_MULTISAMPLE)
-g['glutInitWidowSize'] = g['glutInitWindowSize']
-g['glutInitWidowSize'](500, 500)
+g.glutInitWindowSize(500, 500)
 g.glutInitWindowPosition(100, 100)
 
 -- create window & local mouse state variables
