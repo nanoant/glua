@@ -1,7 +1,7 @@
 -- LuaJIT FFI extensions for OpenGL & GLUT
 -- Created by: Adam Strzelecki http://www.nanoant.com/
 
-local g = require('glut')
+local g = require('gl.glut')
 local ffi = require('ffi')
 local M = {}
 

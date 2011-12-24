@@ -3,7 +3,7 @@
 
 local ffi = require 'ffi'
 
-require 'gl'
+require 'gl.gl'
 
 ffi.cdef [[
 /* constants */

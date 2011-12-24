@@ -9,8 +9,8 @@
 
 local ffi = require 'ffi'
 
-require 'gl'
-require 'glu'
+require 'gl.gl'
+require 'gl.glu'
 
 ffi.cdef[[
 /* constants */
