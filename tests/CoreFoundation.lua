@@ -1,5 +1,5 @@
-local cf = require 'CoreFoundation'
-local cg = require 'CoreGraphics'
+local cf = require 'mac.CoreFoundation'
+local cg = require 'mac.CoreGraphics'
 
 print('exe: '..cf.tostring(cf.executableURL()))
 print('res: '..cf.tostring(cf.resourcesURL()))
