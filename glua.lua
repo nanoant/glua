@@ -21,7 +21,6 @@ ffi.cdef [[
   typedef void (*glutTimerCallback)(int value);
   typedef void (*glutIdleCallback)(void);
 ]]
-M.glutEmptyCallback = ffi.new('void *')
 M.glutTimerCallback = function(f)
   return ffi.cast('glutTimerCallback', f)
 end

@@ -7,10 +7,10 @@
 -- provided without guarantee or warrantee expressed or  implied. This
 -- program is -not- in the public domain.
 
-local ffi = require('ffi')
+local ffi = require 'ffi'
 
-require('gl')
-require('glu')
+require 'gl'
+require 'glu'
 
 ffi.cdef[[
 /* constants */

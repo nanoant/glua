@@ -1,9 +1,9 @@
 -- LuaJIT FFI adapted GLU headers
 -- Created by: Adam Strzelecki http://www.nanoant.com/
 
-local ffi = require('ffi')
+local ffi = require 'ffi'
 
-require('gl')
+require 'gl'
 
 ffi.cdef [[
 /* constants */

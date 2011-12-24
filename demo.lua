@@ -1,7 +1,8 @@
 -- LuaJIT FFI GLUT demo
 -- Author: Adam Strzelecki http://www.nanoant.com/
 
-local g = require('glua')
+local g  = require('glua')
+local cg = require('mac.CoreGraphics')
 
 -- initialize display (note: glut module calls glutInit)
 g.glutInitDisplayMode(
@@ -26,16 +27,29 @@ g.glEnable(g.GL_LIGHTING)
 g.glEnable(g.GL_LIGHT0)
 g.glShadeModel(g.GL_SMOOTH)
 
--- set up the light
-g.glMaterial(g.GL_FRONT, g.GL_AMBIENT,   0, 0, 0, 1)
-g.glMaterial(g.GL_FRONT, g.GL_DIFFUSE,   1, 0, 0, 1)
-g.glMaterial(g.GL_FRONT, g.GL_SPECULAR,  1, 1, 1, 1)
-g.glMaterial(g.GL_FRONT, g.GL_SHININESS, 20)
+-- set up light
+g.glMaterial(g.GL_FRONT, g.GL_AMBIENT,   .1, .1, .1, 1)
+g.glMaterial(g.GL_FRONT, g.GL_DIFFUSE,   .5, .5, .5, 1)
+g.glMaterial(g.GL_FRONT, g.GL_SPECULAR,  1,  1,  1,  1)
+g.glMaterial(g.GL_FRONT, g.GL_SHININESS, 30)
 g.glLight(g.GL_LIGHT0,   g.GL_POSITION,  0, 0, 0, 0)
 
--- prepare texture
-local texture = g.glGenTexture()
-g.glDeleteTexture(texture)
+-- set up texture
+local texture
+local textureData, width, height, bpc = cg.bitmap('textures/marble.png')
+if textureData then
+  texture = g.glGenTexture()
+  g.glBindTexture(g.GL_TEXTURE_2D, texture)
+  g.gluBuild2DMipmaps(g.GL_TEXTURE_2D,    -- texture to specify
+                      g.GL_RGBA,          -- internal texture storage format
+                      width,              -- texture width
+                      height,             -- texture height
+                      g.GL_RGBA,          -- pixel format
+                      g.GL_UNSIGNED_BYTE, -- color component format
+                      textureData)        -- pointer to texture image
+  textureData = nil
+  g.glEnable(g.GL_TEXTURE_2D)
+end
 
 -- called upon window resize & creation
 g.glutReshapeFunc(function(w, h)
@@ -84,7 +98,7 @@ g.glutMouseFunc(function(button, state, x, y)
     if state == g.GLUT_DOWN then
       g.glutIdleFunc(rotateCallback)
     else
-      g.glutIdleFunc(g.glutEmptyCallback)
+      g.glutIdleFunc(nil)
     end
   end
 end)

@@ -29,8 +29,8 @@
 -- version 1.2.1 Specification.
 --
 
-local ffi = require('ffi')
-ffi.cdef[[
+local ffi = require 'ffi'
+ffi.cdef [[
 /* types */
 typedef unsigned int   GLenum;
 typedef unsigned char  GLboolean;
