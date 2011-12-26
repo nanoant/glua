@@ -164,15 +164,14 @@ function M.bitmapFromImage(cfimg)
   if cfimg == nil then return nil end
   local width      = M.imageWidth(cfimg)
   local height     = M.imageHeight(cfimg)
-  local bpc        = M.imageBPC(cfimg)
-  local pitch      = 4 * width * bpc / 8 -- M.imagePitch(cfimg)
+  local pitch      = 4 * width
   local bitmapBuf  = ffi.new('uint8_t[?]', height * pitch)
   local colorSpace = ffi.gc(cg.CGColorSpaceCreateDeviceRGB(), cg.CGColorSpaceRelease)
   local bitmapCtx  = ffi.gc(cg.CGBitmapContextCreate(
     bitmapBuf,
     width, 
     height, 
-    bpc, 
+    8, 
     pitch, 
     colorSpace, 
     cg.kCGImageAlphaPremultipliedLast
@@ -180,12 +179,14 @@ function M.bitmapFromImage(cfimg)
   if bitmapCtx == nil then return nil end
   local rect = M.rect(0, 0, width, height)
   cg.CGContextDrawImage(bitmapCtx, rect, cfimg)
-  return bitmapBuf, width, height, bpc, pitch
+  return bitmapBuf, width, height, 4
 end
 function M.bitmap(path)
   local cfimg = M.image(path)
   if cfimg == nil then return nil end
   return M.bitmapFromImage(cfimg)
 end
+
+setmetatable(M, { __index = cg })
 
 return M

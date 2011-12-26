@@ -2,7 +2,8 @@
 -- Author: Adam Strzelecki http://www.nanoant.com/
 
 local g  = require('glua')
-local cg = require('mac.CoreGraphics')
+local imglib = require('mac.CoreGraphics')
+-- local imglib = require('lib.png')
 
 -- initialize display (note: glut module calls glutInit)
 g.glutInitDisplayMode(
@@ -36,19 +37,29 @@ g.glLight(g.GL_LIGHT0,   g.GL_POSITION,  0, 0, 0, 0)
 
 -- set up texture
 local texture
-local textureData, width, height, bpc = cg.bitmap('textures/marble.png')
+local textureData, width, height, channels = imglib.bitmap('textures/marble.png')
+local storage
+if channels == 4 then
+  storage = g.GL_RGBA
+elseif channels == 3 then
+  storage = g.GL_RGB
+elseif channels == 1 then
+  storage = g.GL_ALPHA
+end
 if textureData then
   texture = g.glGenTexture()
   g.glBindTexture(g.GL_TEXTURE_2D, texture)
   g.gluBuild2DMipmaps(g.GL_TEXTURE_2D,    -- texture to specify
-                      g.GL_RGBA,          -- internal texture storage format
+                      storage,            -- internal texture storage format
                       width,              -- texture width
                       height,             -- texture height
-                      g.GL_RGBA,          -- pixel format
+                      storage,            -- pixel format
                       g.GL_UNSIGNED_BYTE, -- color component format
                       textureData)        -- pointer to texture image
   textureData = nil
   g.glEnable(g.GL_TEXTURE_2D)
+  g.glTexParameteri(g.GL_TEXTURE_2D, g.GL_TEXTURE_MIN_FILTER, g.GL_LINEAR);
+  g.glTexParameteri(g.GL_TEXTURE_2D, g.GL_TEXTURE_MAG_FILTER, g.GL_LINEAR);
 end
 
 -- called upon window resize & creation
