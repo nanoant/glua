@@ -15,6 +15,9 @@ local glBooleanv = ffi.typeof('GLboolean[?]')
 local glEnumv    = ffi.typeof('GLenum[?]')
 local glClampfv  = ffi.typeof('GLclampf[?]')
 local glClampdv  = ffi.typeof('GLclampd[?]')
+local glCharv    = ffi.typeof('GLchar[?]')
+local glCharp    = ffi.typeof('GLchar *')
+local glConstCharpp = ffi.typeof('const GLchar *[1]')
 
 -- callbacks
 ffi.cdef [[
@@ -421,9 +424,86 @@ M.glGet = function(what)
   local m = class[2](class[1])
   glGetTypeMap[class[2]](what, m)
   if class[1] == 1 then
+    if class[2] == glBooleanv then
+      return m[0] == g.GL_TRUE
+    end
     return m[0]
   end
   return m
+end
+local glGetShaderMap = {
+  [g.GL_SHADER_TYPE]          = {  1, false },
+  [g.GL_DELETE_STATUS]        = {  1, true  },
+  [g.GL_COMPILE_STATUS]       = {  1, true  },
+  [g.GL_INFO_LOG_LENGTH]      = {  1, false },
+  [g.GL_SHADER_SOURCE_LENGTH] = {  1, false },
+}
+function M.glGetShader(shader, what)
+  local class = glGetShaderMap[what]
+  if class == nil then
+    return nil
+  end
+  local m = glIntv(class[1])
+  g.glGetShaderiv(shader, what, m)
+  if class[1] == 1 then
+    if class[2] then
+      return m[0] == g.GL_TRUE
+    end
+    return m[0]
+  end
+  return m
+end
+function M.glGetShaderInfoLog(shader)
+  local logSize  = M.glGetShader(shader, g.GL_INFO_LOG_LENGTH)
+  local logSizep = glSizeiv(1)
+  if logSize == nil or logSize <= 0 then
+    return nil
+  end
+  local log = glCharv(logSize+1)
+  g.glGetShaderInfoLog(shader, logSize+1, logSizep, log)
+  return ffi.string(log)
+end
+function M.glShaderSource(shader, source)
+  local sourcep = glCharv(#source + 1)
+  ffi.copy(sourcep, source)
+  local sourcepp = glConstCharpp(sourcep)
+  g.glShaderSource(shader, 1, sourcepp, NULL)
+end
+local glGetProgramMap = {
+  [g.GL_DELETE_STATUS]               = {  1, true  },
+  [g.GL_LINK_STATUS]                 = {  1, true  },
+  [g.GL_VALIDATE_STATUS]             = {  1, true  },
+  [g.GL_INFO_LOG_LENGTH]             = {  1, false },
+  [g.GL_ATTACHED_SHADERS]            = {  1, false },
+  [g.GL_ACTIVE_ATTRIBUTES]           = {  1, false },
+  [g.GL_ACTIVE_ATTRIBUTE_MAX_LENGTH] = {  1, false },
+  [g.GL_ACTIVE_UNIFORMS]             = {  1, false },
+  [g.GL_ACTIVE_UNIFORMS]             = {  1, false },
+}
+function M.glGetProgram(program, what)
+  local class = glGetProgramMap[what]
+  if class == nil then
+    return nil
+  end
+  local m = glIntv(class[1])
+  g.glGetProgramiv(program, what, m)
+  if class[1] == 1 then
+    if class[2] then
+      return m[0] == g.GL_TRUE
+    end
+    return m[0]
+  end
+  return m
+end
+function M.glGetProgramInfoLog(program)
+  local logSize  = M.glGetProgram(program, g.GL_INFO_LOG_LENGTH)
+  local logSizep = glSizeiv(1)
+  if logSize == nil or logSize <= 0 then
+    return nil
+  end
+  local log = glCharv(logSize+1)
+  g.glGetProgramInfoLog(program, logSize+1, logSizep, log)
+  return ffi.string(log)
 end
 
 -- make glGetString return regular string
@@ -451,6 +531,48 @@ M.glMaterial = function(face, type, ...)
 end
 M.glLight = function(face, type, ...)
   return g.glLightfv(face, type, glFloatv(select('#', ...), ...))
+end
+
+-- renders solid cube with proper texture & normal map coords
+function M.solidCube(s)
+  g.glBegin(g.GL_QUADS)
+  -- front
+  g.glNormal3f(0, 0, 1)
+  g.glTexCoord2f(1, 1) g.glVertex3f(-s/2, -s/2,  s/2)
+  g.glTexCoord2f(0, 1) g.glVertex3f( s/2, -s/2,  s/2)
+  g.glTexCoord2f(0, 0) g.glVertex3f( s/2,  s/2,  s/2)
+  g.glTexCoord2f(1, 0) g.glVertex3f(-s/2,  s/2,  s/2)
+  -- back
+  g.glNormal3f(0, 0, -1)
+  g.glTexCoord2f(1, 1) g.glVertex3f( s/2, -s/2, -s/2)
+  g.glTexCoord2f(0, 1) g.glVertex3f(-s/2, -s/2, -s/2)
+  g.glTexCoord2f(0, 0) g.glVertex3f(-s/2,  s/2, -s/2)
+  g.glTexCoord2f(1, 0) g.glVertex3f( s/2,  s/2, -s/2)
+  -- top
+  g.glNormal3f(0, 1, 0)
+  g.glTexCoord2f(1, 1) g.glVertex3f( s/2,  s/2, -s/2)
+  g.glTexCoord2f(0, 1) g.glVertex3f(-s/2,  s/2, -s/2)
+  g.glTexCoord2f(0, 0) g.glVertex3f(-s/2,  s/2,  s/2)
+  g.glTexCoord2f(1, 0) g.glVertex3f( s/2,  s/2,  s/2)
+  -- bottom
+  g.glNormal3f(0, -1, 0)
+  g.glTexCoord2f(1, 1) g.glVertex3f(-s/2, -s/2, -s/2)
+  g.glTexCoord2f(0, 1) g.glVertex3f( s/2, -s/2, -s/2)
+  g.glTexCoord2f(0, 0) g.glVertex3f( s/2, -s/2,  s/2)
+  g.glTexCoord2f(1, 0) g.glVertex3f(-s/2, -s/2,  s/2)
+  -- left
+  g.glNormal3f(-1, 0, 0)
+  g.glTexCoord2f(1, 1) g.glVertex3f(-s/2, -s/2, -s/2)
+  g.glTexCoord2f(0, 1) g.glVertex3f(-s/2, -s/2,  s/2)
+  g.glTexCoord2f(0, 0) g.glVertex3f(-s/2,  s/2,  s/2)
+  g.glTexCoord2f(1, 0) g.glVertex3f(-s/2,  s/2, -s/2)
+  -- right
+  g.glNormal3f(1, 0, 0)
+  g.glTexCoord2f(1, 1) g.glVertex3f( s/2, -s/2,  s/2)
+  g.glTexCoord2f(0, 1) g.glVertex3f( s/2, -s/2, -s/2)
+  g.glTexCoord2f(0, 0) g.glVertex3f( s/2,  s/2, -s/2)
+  g.glTexCoord2f(1, 0) g.glVertex3f( s/2,  s/2,  s/2)
+  g.glEnd()
 end
 
 -- removing type suffixes
