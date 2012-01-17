@@ -3,9 +3,9 @@
 --
 -- Usage: Use left mouse button to rotate cube, right mouse button to rotate lights
 
-local g  = require('glua')
-local imglib = require('mac.CoreGraphics')
--- local imglib = require('lib.png')
+local g = require 'glua'
+local ok, imglib = pcall(require, 'mac.CoreGraphics')
+if not ok then imglib = require 'lib.png' end
 
 -- http://www.tutorialsforblender3d.com/Textures/Bricks-NormalMap/Bricks_Normal_1.html
 -- http://www.tutorialsforblender3d.com/Textures/Wall-NormalMap/Wall_Normal_1.html
