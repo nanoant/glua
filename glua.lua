@@ -24,10 +24,10 @@ ffi.cdef [[
   typedef void (*glutTimerCallback)(int value);
   typedef void (*glutIdleCallback)(void);
 ]]
-M.glutTimerCallback = function(f)
+M.utTimerCallback = function(f)
   return ffi.cast('glutTimerCallback', f)
 end
-M.glutIdleCallback = function(f)
+M.utIdleCallback = function(f)
   return ffi.cast('glutIdleCallback', f)
 end
 
@@ -416,7 +416,7 @@ local glGetTypeMap = {
   [glClampfv]  = g.glGetFloatv,
   [glClampdv]  = g.glGetDoublev
 }
-M.glGet = function(what)
+M.Get = function(what)
   local class = glGetMap[what]
   if class == nil then
     return nil
@@ -438,7 +438,7 @@ local glGetShaderMap = {
   [g.GL_INFO_LOG_LENGTH]      = {  1, false },
   [g.GL_SHADER_SOURCE_LENGTH] = {  1, false },
 }
-function M.glGetShader(shader, what)
+function M.GetShader(shader, what)
   local class = glGetShaderMap[what]
   if class == nil then
     return nil
@@ -453,8 +453,8 @@ function M.glGetShader(shader, what)
   end
   return m
 end
-function M.glGetShaderInfoLog(shader)
-  local logSize  = M.glGetShader(shader, g.GL_INFO_LOG_LENGTH)
+function M.GetShaderInfoLog(shader)
+  local logSize  = M.GetShader(shader, g.GL_INFO_LOG_LENGTH)
   local logSizep = glSizeiv(1)
   if logSize == nil or logSize <= 0 then
     return nil
@@ -463,7 +463,7 @@ function M.glGetShaderInfoLog(shader)
   g.glGetShaderInfoLog(shader, logSize+1, logSizep, log)
   return ffi.string(log)
 end
-function M.glShaderSource(shader, source)
+function M.ShaderSource(shader, source)
   local sourcep = glCharv(#source + 1)
   ffi.copy(sourcep, source)
   local sourcepp = glConstCharpp(sourcep)
@@ -480,7 +480,7 @@ local glGetProgramMap = {
   [g.GL_ACTIVE_UNIFORMS]             = {  1, false },
   [g.GL_ACTIVE_UNIFORMS]             = {  1, false },
 }
-function M.glGetProgram(program, what)
+function M.GetProgram(program, what)
   local class = glGetProgramMap[what]
   if class == nil then
     return nil
@@ -495,8 +495,8 @@ function M.glGetProgram(program, what)
   end
   return m
 end
-function M.glGetProgramInfoLog(program)
-  local logSize  = M.glGetProgram(program, g.GL_INFO_LOG_LENGTH)
+function M.GetProgramInfoLog(program)
+  local logSize  = M.GetProgram(program, g.GL_INFO_LOG_LENGTH)
   local logSizep = glSizeiv(1)
   if logSize == nil or logSize <= 0 then
     return nil
@@ -507,34 +507,34 @@ function M.glGetProgramInfoLog(program)
 end
 
 -- make glGetString return regular string
-M.glGetString = function(what)
+M.GetString = function(what)
   return ffi.string(g.glGetString(what))
 end
 
 -- make glGetString return regular string
-M.glGenTextures = function(num, out)
+M.GenTextures = function(num, out)
   num = num or 1
   out = out or glUintv(num)
   g.glGenTextures(num, out)
   return out
 end
-M.glGenTexture = function()
-  return M.glGenTextures(1)[0]
+M.GenTexture = function()
+  return M.GenTextures(1)[0]
 end
-M.glDeleteTexture = function(texture)
-  return M.glDeleteTextures(1, glUintv(1, texture))
+M.DeleteTexture = function(texture)
+  return M.DeleteTextures(1, glUintv(1, texture))
 end
 
 -- light vaarg functions
-M.glMaterial = function(face, type, ...)
+M.Material = function(face, type, ...)
   return g.glMaterialfv(face, type, glFloatv(select('#', ...), ...))
 end
-M.glLight = function(face, type, ...)
+M.Light = function(face, type, ...)
   return g.glLightfv(face, type, glFloatv(select('#', ...), ...))
 end
 
 -- renders solid cube with proper texture & normal map coords
-function M.solidCube(s)
+function M.SolidCube(s)
   g.glBegin(g.GL_QUADS)
   -- front
   g.glNormal3f(0, 0, 1)
@@ -576,9 +576,23 @@ function M.solidCube(s)
 end
 
 -- removing type suffixes
-M.glMultMatrix = g.glMultMatrixf
-M.glRotate     = g.glRotatef
+M.MultMatrix = g.glMultMatrixf
+M.Rotate     = g.glRotatef
 
-setmetatable(M, { __index = g })
+-- index metamethod removing gl prefix for funtions
+-- and GL_ prefix for constants
+setmetatable(M, { __index = function(t, n)
+  local s
+  -- all functions contain at least one small letter
+  if n:find('[a-z]') then
+    s = g['gl'..n]
+  elseif n:find('^UT?_') then
+    s = g['GL'..n]
+  else
+    s = g['GL_'..n]
+  end
+  rawset(t, n, s)
+  return s
+end })
 
 return M
