@@ -24,12 +24,8 @@ ffi.cdef [[
   typedef void (*glutTimerCallback)(int value);
   typedef void (*glutIdleCallback)(void);
 ]]
-M.utTimerCallback = function(f)
-  return ffi.cast('glutTimerCallback', f)
-end
-M.utIdleCallback = function(f)
-  return ffi.cast('glutIdleCallback', f)
-end
+M.utTimerCallback = function(f) return ffi.cast('glutTimerCallback', f) end
+M.utIdleCallback  = function(f) return ffi.cast('glutIdleCallback', f)  end
 
 -- automatic vector generating get
 -- http://www.opengl.org/sdk/docs/man/xhtml/glGet.xml
@@ -424,9 +420,6 @@ M.Get = function(what)
   local m = class[2](class[1])
   glGetTypeMap[class[2]](what, m)
   if class[1] == 1 then
-    if class[2] == glBooleanv then
-      return m[0] == g.GL_TRUE
-    end
     return m[0]
   end
   return m

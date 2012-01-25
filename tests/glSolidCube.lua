@@ -1,9 +1,11 @@
+#!/usr/bin/env luajit
+
 -- LuaJIT FFI GLUT demo
 -- Author: Adam Strzelecki http://www.nanoant.com/
 --
 -- Usage: Use left mouse button to rotate cube, right mouse button to rotate lights
 
-local gl = require 'glua'
+local gl = require 'gl'
 local ok, imglib = pcall(require, 'mac.CoreGraphics')
 if not ok then imglib = require 'lib.png' end
 
