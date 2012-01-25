@@ -420,6 +420,9 @@ M.Get = function(what)
   local m = class[2](class[1])
   glGetTypeMap[class[2]](what, m)
   if class[1] == 1 then
+    if ffi.istype(class[2], glBooleanv) then
+      return m[0] == g.GL_TRUE
+    end
     return m[0]
   end
   return m
