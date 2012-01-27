@@ -41,7 +41,7 @@ function Font:resize(size)
 end
 
 function Font:glyphs(str)
-  local ucs2, size = iconv.iconv_uint16(ic, str)
+  local ucs2, size = iconv.iconv(ic, str, true)
   local map = self.map
   local chars = {}
   for c = 0, size-1 do
@@ -147,8 +147,8 @@ function Font:draw(str, width)
       x = x + glyph.advance
     end
   end
-  gl.Disable(gl.TEXTURE_RECTANGLE)
   gl.End()
+  gl.Disable(gl.TEXTURE_RECTANGLE)
 end
 
 return gui

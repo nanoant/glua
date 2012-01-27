@@ -41,49 +41,35 @@ setmetatable(iconv, {
   end
 })
 
-function iconv.iconv(ic, str)
+local charptr = ffi.typeof('char *[1]')
+local sizeptr = ffi.typeof('size_t[1]')
+local chara   = ffi.typeof('char [?]')
+local charp   = ffi.typeof('char *')
+local uint16a = ffi.typeof('uint16_t [?]')
+
+function iconv.iconv(ic, str, uint16)
   local len       = string.len(str)
 
-  local inbuf     = ffi.new('char [?]', len)
-  local inbufptr  = ffi.new('char *[1]')
-  local insize    = ffi.new('size_t[1]')
-  inbufptr[0]     = inbuf
-  insize[0]       = len
+  local insize    = sizeptr(len)
+  local inbuf     = chara(len+1, str)
+  local inbufptr  = charptr(inbuf)
 
-  local outbuf    = ffi.new('char [?]', len*2)
-  local outbufptr = ffi.new('char *[1]')
-  local outsize   = ffi.new('size_t[1]')
-  outbufptr[0]    = outbuf
-  outsize[0]      = 2*len
+  local outsize   = sizeptr(2*len)
+  local outbuf, outbufptr
+  if uint16 then
+    outbuf        = uint16a(len)
+    outbufptr     = charptr(ffi.cast(charp, outbuf))
+  else
+    outbuf        = chara(2*len)
+    outbufptr     = charptr(outbuf)
+  end
 
-  ffi.copy(inbuf, str)
   iconvlib.iconv(ic, inbufptr, insize, outbufptr, outsize)
   local outlen = 2*len - outsize[0]
-
-  return ffi.string(outbuf, outlen), tonumber(outlen)
-end
-
-function iconv.iconv_uint16(ic, str)
-  local len       = string.len(str)
-
-  local inbuf     = ffi.new('char [?]', len)
-  local inbufptr  = ffi.new('char *[1]')
-  local insize    = ffi.new('size_t[1]')
-  inbufptr[0]     = inbuf
-  insize[0]       = len
-
-  local outbuf    = ffi.new('uint16_t [?]', len)
-  local outbufstr = ffi.cast('char *', outbuf)
-  local outbufptr = ffi.new('char *[1]')
-  local outsize   = ffi.new('size_t[1]')
-  outbufptr[0]    = outbufstr
-  outsize[0]      = 2*len
-
-  ffi.copy(inbuf, str)
-  iconvlib.iconv(ic, inbufptr, insize, outbufptr, outsize)
-  local outlen = 2*len - outsize[0]
-
-  return outbuf, tonumber(outlen / 2)
+  if uint16 then
+    return outbuf, tonumber(outlen / 2)
+  end
+  return ffi.string(outbuf, outlen), outlen
 end
 
 return iconv

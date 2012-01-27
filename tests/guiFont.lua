@@ -11,8 +11,7 @@ local lorem = [[
 gl.utInitDisplayMode(
   gl.UT_RGBA +
   gl.UT_DOUBLE +
-  gl.UT_DEPTH +
-  gl.UT_MULTISAMPLE)
+  gl.UT_DEPTH)
 gl.utInitWindowSize(500, 500)
 gl.utInitWindowPosition(100, 100)
 
@@ -21,7 +20,7 @@ local window = gl.utCreateWindow("gl.Font")
 local width, height
 local font = gui.Font{ size = size, font = font }
 
-gl.ClearColor(.5,0,0,1)
+gl.ClearColor(0,.2,.4,1)
 gl.Enable(gl.BLEND)
 gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
@@ -42,7 +41,7 @@ end)
 gl.utDisplayFunc(function()
   gl.Clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT)
   gl.Color4f(1,1,1,1)
-  font:draw(lorem, width)
+  font:draw(gl.GetString(gl.EXTENSIONS), width)
   gl.utSwapBuffers()
 end)
 
