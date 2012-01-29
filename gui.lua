@@ -81,7 +81,7 @@ function Font:glyphs(str)
         -- skip to next row
         if self.x + entry.pitch > self.texdim then
           self.x = 0
-          self.y = self.y + entry.maxheight
+          self.y = self.y + self.maxheight
           self.maxheight = 0
         end
         entry.x = self.x
