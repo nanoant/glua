@@ -1,6 +1,6 @@
 local gl  = require 'gl'
 local gui = require 'gui'
-local size  = 14
+local size  = 20
 local font  = '/System/Library/Fonts/LucidaGrande.ttc'
 local lorem = [[
       Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
@@ -41,7 +41,7 @@ end)
 gl.utDisplayFunc(function()
   gl.Clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT)
   gl.Color4f(1,1,1,1)
-  font:draw(gl.GetString(gl.EXTENSIONS), width)
+  font:draw(lorem..gl.GetString(gl.EXTENSIONS), width)
   gl.utSwapBuffers()
 end)
 
