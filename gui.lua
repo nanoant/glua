@@ -13,7 +13,7 @@ local Font = {}
 function gui:Font()
   self = self or {}
   self.size    = self.size   or 12
-  self.texdim  = self.texdim or 1024
+  self.texdim  = self.texdim or 512
   -- load font
   self.face    = ft.New_Face(self.font)
   self.map     = {}
