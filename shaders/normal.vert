@@ -1,5 +1,9 @@
 #version 110
 
+uniform mat4 projectionMatrix;
+uniform mat4 modelViewMatrix;
+uniform mat4 normalMatrix;
+
 uniform int numLights;
 
 varying vec3 lights[gl_MaxLights];  // light direction vector in tangent space

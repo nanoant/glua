@@ -9,6 +9,9 @@ typedef union {
     GLfloat m11, m21;
     GLfloat m12, m22;
   };
+  struct {
+    GLfloat a, b, c, d;
+  };
   GLfloat data[4];
 } GLmat2;
 typedef union {
@@ -16,6 +19,9 @@ typedef union {
     GLfloat m11, m21, m31;
     GLfloat m12, m22, m32;
     GLfloat m13, m23, m33;
+  };
+  struct {
+    GLfloat a, b, c, d, e, f, g, h, k;
   };
   GLfloat data[9];
 } GLmat3;
@@ -25,6 +31,12 @@ typedef union {
     GLfloat m12, m22, m32, m42;
     GLfloat m13, m23, m33, m43;
     GLfloat m14, m24, m34, m44;
+  };
+  struct {
+    GLfloat a, b, c, d;
+    GLfloat e, f, g, h;
+    GLfloat i, j, k, l;
+    GLfloat m, n, o, p;
   };
   GLfloat data[16];
 } GLmat4;
@@ -44,7 +56,20 @@ mat2 = ffi.metatype('GLmat2', {
     return mat2(a.m11*b.m11 + a.m21*b.m12,  a.m11*b.m21 + a.m21*b.m22,
                 a.m12*b.m11 + a.m22*b.m12,  a.m12*b.m21 + a.m22*b.m22)
   end,
-  __tostring = function(a) return string.format("[%2.12g %2.12g]\n[%2.12g %2.12g]", a.m11, a.m21, a.m12, a.m22) end
+  __index = function(m, i)
+    if i == 't' then
+      return mat2(m.m11, m.m12,
+                  m.m21, m.m22)
+    elseif i == 'det' then
+      return m.a * m.d - m.b * m.c
+    elseif i == 'inv' then
+      local det = m.a * m.d - m.b * m.c;
+      return mat2( m.d / det, -m.b / det,
+                  -m.c / det,  m.a / det)
+    end
+    return nil
+  end,
+  __tostring = function(m) return string.format("[%2.12g %2.12g]\n[%2.12g %2.12g]", m.a, m.b, m.c, m.d) end
 })
 local mat3
 mat3 = ffi.metatype('GLmat3', {
@@ -58,11 +83,28 @@ mat3 = ffi.metatype('GLmat3', {
                 a.m12*b.m11 + a.m22*b.m12 + a.m32*b.m13,  a.m12*b.m21 + a.m22*b.m22 + a.m32*b.m23,  a.m12*b.m31 + a.m22*b.m32 + a.m32*b.m33,
                 a.m13*b.m11 + a.m23*b.m12 + a.m33*b.m13,  a.m13*b.m21 + a.m23*b.m22 + a.m33*b.m23,  a.m13*b.m31 + a.m23*b.m32 + a.m33*b.m33)
   end,
-  __tostring = function(a)
+  __index = function(m, i)
+    if i == 't' then
+      return mat3(m.m11, m.m12, m.m13,
+                  m.m21, m.m22, m.m23,
+                  m.m31, m.m32, m.m33)
+    elseif i == 'det' then
+      return m.a * (m.e*m.k - m.f*m.h) +
+             m.b * (m.f*m.g - m.k*m.d) +
+             m.c * (m.d*m.h - m.e*m.g)
+    elseif i == 'inv' then
+      local det = m.a * (m.e*m.k - m.f*m.h) +
+                  m.b * (m.f*m.g - m.k*m.d) +
+                  m.c * (m.d*m.h - m.e*m.g)
+      return mat3((m.e*m.k - m.f*m.h) / det, (m.c*m.h - m.b*m.k) / det, (m.b*m.f - m.c*m.e) / det,
+                  (m.f*m.g - m.d*m.k) / det, (m.a*m.k - m.c*m.g) / det, (m.c*m.d - m.a*m.f) / det,
+                  (m.d*m.h - m.e*m.g) / det, (m.g*m.b - m.a*m.h) / det, (m.a*m.e - m.b*m.d) / det)
+    end
+    return nil
+  end,
+  __tostring = function(m)
     return string.format("[%2.12g %2.12g %2.12g]\n[%2.12g %2.12g %2.12g]\n[%2.12g %2.12g %2.12g]",
-                         a.m11, a.m21, a.m31,
-                         a.m12, a.m22, a.m32,
-                         a.m13, a.m23, a.m33)
+                         m.a, m.b, m.c, m.d, m.e, m.f, m.g, m.h, m.k)
     end
 })
 local mat4
@@ -94,12 +136,49 @@ mat4 = ffi.metatype('GLmat4', {
                 a.m14*b.m31 + a.m24*b.m32 + a.m34*b.m33 + a.m44*b.m34,
                 a.m14*b.m41 + a.m24*b.m42 + a.m34*b.m43 + a.m44*b.m44)
   end,
-  __tostring = function(a)
+  __index = function(m, i)
+    if i == 't' then
+      return mat4(m.m11, m.m12, m.m13, m.m14,
+                  m.m21, m.m22, m.m23, m.m24,
+                  m.m31, m.m32, m.m33, m.m34,
+                  m.m41, m.m42, m.m43, m.m44)
+     -- http://stackoverflow.com/questions/1148309/inverting-a-4x4-matrix
+    elseif i == 'det' then
+      local i1 =  m.f*m.k*m.p - m.f*m.l*m.o - m.j*m.g*m.p + m.j*m.h*m.o + m.n*m.g*m.l - m.n*m.h*m.k
+      local i2 = -m.e*m.k*m.p + m.e*m.l*m.o + m.i*m.g*m.p - m.i*m.h*m.o - m.m*m.g*m.l + m.m*m.h*m.k
+      local i3 =  m.e*m.j*m.p - m.e*m.l*m.n - m.i*m.f*m.p + m.i*m.h*m.n + m.m*m.f*m.l - m.m*m.h*m.j
+      local i4 = -m.e*m.j*m.o + m.e*m.k*m.n + m.i*m.f*m.o - m.i*m.g*m.n - m.m*m.f*m.k + m.m*m.g*m.j
+      return m.a*i1 + m.b*i2 + m.c*i3 + m.d*i4
+    elseif i == 'inv' then
+      local inv = mat4(
+        m.f*m.k*m.p - m.f*m.l*m.o - m.j*m.g*m.p + m.j*m.h*m.o + m.n*m.g*m.l - m.n*m.h*m.k,
+       -m.b*m.k*m.p + m.b*m.l*m.o + m.j*m.c*m.p - m.j*m.d*m.o - m.n*m.c*m.l + m.n*m.d*m.k,
+        m.b*m.g*m.p - m.b*m.h*m.o - m.f*m.c*m.p + m.f*m.d*m.o + m.n*m.c*m.h - m.n*m.d*m.g,
+       -m.b*m.g*m.l + m.b*m.h*m.k + m.f*m.c*m.l - m.f*m.d*m.k - m.j*m.c*m.h + m.j*m.d*m.g,
+       -m.e*m.k*m.p + m.e*m.l*m.o + m.i*m.g*m.p - m.i*m.h*m.o - m.m*m.g*m.l + m.m*m.h*m.k,
+        m.a*m.k*m.p - m.a*m.l*m.o - m.i*m.c*m.p + m.i*m.d*m.o + m.m*m.c*m.l - m.m*m.d*m.k,
+       -m.a*m.g*m.p + m.a*m.h*m.o + m.e*m.c*m.p - m.e*m.d*m.o - m.m*m.c*m.h + m.m*m.d*m.g,
+        m.a*m.g*m.l - m.a*m.h*m.k - m.e*m.c*m.l + m.e*m.d*m.k + m.i*m.c*m.h - m.i*m.d*m.g,
+        m.e*m.j*m.p - m.e*m.l*m.n - m.i*m.f*m.p + m.i*m.h*m.n + m.m*m.f*m.l - m.m*m.h*m.j,
+       -m.a*m.j*m.p + m.a*m.l*m.n + m.i*m.b*m.p - m.i*m.d*m.n - m.m*m.b*m.l + m.m*m.d*m.j,
+        m.a*m.f*m.p - m.a*m.h*m.n - m.e*m.b*m.p + m.e*m.d*m.n + m.m*m.b*m.h - m.m*m.d*m.f,
+       -m.a*m.f*m.l + m.a*m.h*m.j + m.e*m.b*m.l - m.e*m.d*m.j - m.i*m.b*m.h + m.i*m.d*m.f,
+       -m.e*m.j*m.o + m.e*m.k*m.n + m.i*m.f*m.o - m.i*m.g*m.n - m.m*m.f*m.k + m.m*m.g*m.j,
+        m.a*m.j*m.o - m.a*m.k*m.n - m.i*m.b*m.o + m.i*m.c*m.n + m.m*m.b*m.k - m.m*m.c*m.j,
+       -m.a*m.f*m.o + m.a*m.g*m.n + m.e*m.b*m.o - m.e*m.c*m.n - m.m*m.b*m.g + m.m*m.c*m.f,
+        m.a*m.f*m.k - m.a*m.g*m.j - m.e*m.b*m.k + m.e*m.c*m.j + m.i*m.b*m.g - m.i*m.c*m.f)
+       local det = m.a*inv.a + m.b*inv.e + m.c*inv.i + m.d*inv.m
+       inv.a = inv.a / det; inv.b = inv.b / det; inv.c = inv.c / det; inv.d = inv.d / det
+       inv.e = inv.e / det; inv.f = inv.f / det; inv.g = inv.g / det; inv.h = inv.h / det
+       inv.i = inv.i / det; inv.j = inv.j / det; inv.k = inv.k / det; inv.l = inv.l / det
+       inv.m = inv.m / det; inv.n = inv.n / det; inv.o = inv.o / det; inv.p = inv.p / det
+       return inv
+    end
+    return nil
+  end,
+  __tostring = function(m)
     return string.format("[%2.12g %2.12g %2.12g %2.12g]\n[%2.12g %2.12g %2.12g %2.12g]\n[%2.12g %2.12g %2.12g %2.12g]\n[%2.12g %2.12g %2.12g %2.12g]",
-                         a.m11, a.m21, a.m31, a.m41,
-                         a.m12, a.m22, a.m32, a.m42,
-                         a.m13, a.m23, a.m33, a.m43,
-                         a.m14, a.m24, a.m34, a.m44)
+                         m.a, m.b, m.c, m.d, m.e, m.f, m.g, m.h, m.i, m.j, m.k, m.l, m.m, m.n, m.o, m.p)
     end
 })
 
@@ -159,5 +238,19 @@ M.Rotate4x = glRotate4x
 M.Rotate4y = glRotate4y
 M.Rotate4z = glRotate4z
 M.Rotate4  = glRotate4
+
+function M.Perspective(l, r, b, t, n, f)
+  return mat4(2/(r-l),       0,  (r+l)/(r-l),            0,
+                    0, 2/(t-b),  (t+b)/(t-b),            0,
+                    0,       0, -(f+n)/(f-n), -2*n*f/(f-n),
+                    0,       0,           -1,            0)
+end
+
+function M.Ortho(l, r, b, t, n, f)
+  return mat4(2/(r-l),       0,        0, -(r+l)/(r-l),
+                    0, 2/(t-b),        0, -(t+b)/(t-b),
+                    0,       0, -2/(f-n), -(f+n)/(f-n),
+                    0,       0,        0,            1)
+end
 
 return M
