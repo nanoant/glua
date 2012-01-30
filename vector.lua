@@ -88,4 +88,8 @@ vec4 = ffi.metatype('GLvec4', {
   __tostring = function(a) return '<'..a.x..','..a.y..','..a.z..','..a.w..'>' end
 })
 
-return {vec2 = vec2, vec3 = vec3, vec4 = vec4}
+return {vec2 = vec2, vec3 = vec3, vec4 = vec4, vec = vec4,
+        vvec2 = ffi.typeof('GLvec2[?]'),
+        vvec3 = ffi.typeof('GLvec3[?]'),
+        vvec4 = ffi.typeof('GLvec4[?]'),
+        vvec  = ffi.typeof('GLvec4[?]')}

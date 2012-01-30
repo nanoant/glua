@@ -84,7 +84,10 @@ mat3 = ffi.metatype('GLmat3', {
                 a.m13*b.m11 + a.m23*b.m12 + a.m33*b.m13,  a.m13*b.m21 + a.m23*b.m22 + a.m33*b.m23,  a.m13*b.m31 + a.m23*b.m32 + a.m33*b.m33)
   end,
   __index = function(m, i)
-    if i == 't' then
+    if i == 'mat2' then
+      return mat2(m.m11, m.m21,
+                  m.m12, m.m22)
+    elseif i == 't' then
       return mat3(m.m11, m.m12, m.m13,
                   m.m21, m.m22, m.m23,
                   m.m31, m.m32, m.m33)
@@ -137,7 +140,14 @@ mat4 = ffi.metatype('GLmat4', {
                 a.m14*b.m41 + a.m24*b.m42 + a.m34*b.m43 + a.m44*b.m44)
   end,
   __index = function(m, i)
-    if i == 't' then
+    if i == 'mat3' then
+      return mat3(m.m11, m.m21, m.m31,
+                  m.m12, m.m22, m.m32,
+                  m.m13, m.m23, m.m33)
+    elseif i == 'mat2' then
+      return mat2(m.m11, m.m21,
+                  m.m12, m.m22)
+    elseif i == 't' then
       return mat4(m.m11, m.m12, m.m13, m.m14,
                   m.m21, m.m22, m.m23, m.m24,
                   m.m31, m.m32, m.m33, m.m34,
@@ -229,6 +239,7 @@ end
 M.mat2 = mat2
 M.mat3 = mat3
 M.mat4 = mat4
+M.mat  = mat4
 M.Rotate2  = glRotate2
 M.Rotate3x = glRotate3x
 M.Rotate3y = glRotate3y
@@ -238,14 +249,51 @@ M.Rotate4x = glRotate4x
 M.Rotate4y = glRotate4y
 M.Rotate4z = glRotate4z
 M.Rotate4  = glRotate4
+M.Rotatex  = glRotate4x
+M.Rotatey  = glRotate4y
+M.Rotatez  = glRotate4z
+M.Rotate   = glRotate4
+M.identity2 = mat2(1, 0,
+                   0, 1)
+M.identity3 = mat3(1, 0, 0,
+                   0, 1, 0,
+                   0, 0, 1)
+M.identity4 = mat4(1, 0, 0, 0,
+                   0, 1, 0, 0,
+                   0, 0, 1, 0,
+                   0, 0, 0, 1)
+M.indentity = M.identity4
 
-function M.Perspective(l, r, b, t, n, f)
+function M.Translate(x, y, z)
+  if ffi.istype(vec2, x) then
+    y = x.y
+    x = x.x
+  elseif ffi.istype(vec3, x) then
+    z = x.z
+    y = x.y
+    x = x.x
+  end
+  y = y or 0
+  z = z or 0
+  return mat4(1, 0, 0, x,
+              0, 1, 0, y,
+              0, 0, 1, z,
+              0, 0, 0, 1)
+end
+
+function M.Frustum(l, r, b, t, n, f)
   return mat4(2/(r-l),       0,  (r+l)/(r-l),            0,
                     0, 2/(t-b),  (t+b)/(t-b),            0,
                     0,       0, -(f+n)/(f-n), -2*n*f/(f-n),
                     0,       0,           -1,            0)
 end
-
+function M.Perspective(fovy, aspect, n, f)
+   local t = n * math.tan(fovy * math.pi / 360.0)
+   local b = -t
+   local l = t * aspect
+   local r = b * aspect
+   return M.Frustum(l, r, b, t, n, f)
+end
 function M.Ortho(l, r, b, t, n, f)
   return mat4(2/(r-l),       0,        0, -(r+l)/(r-l),
                     0, 2/(t-b),        0, -(t+b)/(t-b),

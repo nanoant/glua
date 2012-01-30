@@ -1911,18 +1911,14 @@ enum {
 /* #endif */
 
 /* #ifndef GL_ARB_texture_storage */
-  GL_TEXTURE_IMMUTABLE_FORMAT       = 0x912F,
+  GL_TEXTURE_IMMUTABLE_FORMAT       = 0x912F
 /* #endif */
 
-} /* enum */
+}; /* enum */
 /*************************************************************/
 
-/*
-#include <stddef.h>
-/* #ifndef GL_VERSION_2_0 */
 /* GL type for program/shader text */
 typedef char GLchar;
-/* #endif */
 
 /* #ifndef GL_VERSION_1_5 */
 /* GL types for handling large vertex buffer objects */

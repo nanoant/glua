@@ -6,6 +6,7 @@ local ffi = require 'ffi'
 local M   = require 'matrix'
 
 -- float vector type
+local glFloatp   = ffi.typeof('GLfloat *')
 local glFloatv   = ffi.typeof('GLfloat[?]')
 local glUshortv  = ffi.typeof('GLushort[?]')
 local glUintv    = ffi.typeof('GLuint[?]')
@@ -263,7 +264,7 @@ function M.GetProgramInfoLog(program)
   end
   local log = glCharv(logSize+1)
   g.glGetProgramInfoLog(program, logSize+1, logSizep, log)
-  return ffi.string(log)
+  return ffi.string(constCharp)
 end
 
 -- make glGetString return regular string
@@ -271,7 +272,7 @@ M.GetString = function(what)
   return ffi.string(g.glGetString(what))
 end
 
--- make glGetString return regular string
+-- textures simplification
 M.GenTextures = function(num, out)
   num = num or 1
   out = out or glUintv(num)
@@ -281,8 +282,22 @@ end
 M.GenTexture = function()
   return M.GenTextures(1)[0]
 end
-M.DeleteTexture = function(texture)
-  return M.DeleteTextures(1, glUintv(1, texture))
+M.DeleteTexture = function(...)
+  return M.DeleteTextures(select('#', ...), glUintv(select('#', ...), ...))
+end
+
+-- buffers simplification
+M.GenBuffers = function(num, out)
+  num = num or 1
+  out = out or glUintv(num)
+  g.glGenBuffers(num, out)
+  return out
+end
+M.GenBuffer = function()
+  return M.GenBuffers(1)[0]
+end
+M.DeleteBuffer = function(...)
+  return M.DeleteBuffers(select('#', ...), glUintv(select('#', ...), ...))
 end
 
 -- light vaarg functions
@@ -293,46 +308,49 @@ M.Light = function(face, type, ...)
   return g.glLightfv(face, type, glFloatv(select('#', ...), ...))
 end
 
--- renders solid cube with proper texture & normal map coords
-function M.SolidCube(s)
-  g.glBegin(g.GL_QUADS)
+M.cubeArray = glFloatv(192,
+  -- vertex  -- normal -- tex coord
   -- front
-  g.glNormal3f(0, 0, 1)
-  g.glTexCoord2f(1, 1) g.glVertex3f(-s/2, -s/2,  s/2)
-  g.glTexCoord2f(0, 1) g.glVertex3f( s/2, -s/2,  s/2)
-  g.glTexCoord2f(0, 0) g.glVertex3f( s/2,  s/2,  s/2)
-  g.glTexCoord2f(1, 0) g.glVertex3f(-s/2,  s/2,  s/2)
+  -1, -1,  1,   0,  0,  1,   1, 1,
+   1, -1,  1,   0,  0,  1,   0, 1,
+   1,  1,  1,   0,  0,  1,   0, 0,
+  -1,  1,  1,   0,  0,  1,   1, 0,
   -- back
-  g.glNormal3f(0, 0, -1)
-  g.glTexCoord2f(1, 1) g.glVertex3f( s/2, -s/2, -s/2)
-  g.glTexCoord2f(0, 1) g.glVertex3f(-s/2, -s/2, -s/2)
-  g.glTexCoord2f(0, 0) g.glVertex3f(-s/2,  s/2, -s/2)
-  g.glTexCoord2f(1, 0) g.glVertex3f( s/2,  s/2, -s/2)
+   1, -1, -1,   0,  0, -1,   1, 1,
+  -1, -1, -1,   0,  0, -1,   0, 1,
+  -1,  1, -1,   0,  0, -1,   0, 0,
+   1,  1, -1,   0,  0, -1,   1, 0,
   -- top
-  g.glNormal3f(0, 1, 0)
-  g.glTexCoord2f(1, 1) g.glVertex3f( s/2,  s/2, -s/2)
-  g.glTexCoord2f(0, 1) g.glVertex3f(-s/2,  s/2, -s/2)
-  g.glTexCoord2f(0, 0) g.glVertex3f(-s/2,  s/2,  s/2)
-  g.glTexCoord2f(1, 0) g.glVertex3f( s/2,  s/2,  s/2)
+   1,  1, -1,   0,  1,  0,   1, 1,
+  -1,  1, -1,   0,  1,  0,   0, 1,
+  -1,  1,  1,   0,  1,  0,   0, 0,
+   1,  1,  1,   0,  1,  0,   1, 0,
   -- bottom
-  g.glNormal3f(0, -1, 0)
-  g.glTexCoord2f(1, 1) g.glVertex3f(-s/2, -s/2, -s/2)
-  g.glTexCoord2f(0, 1) g.glVertex3f( s/2, -s/2, -s/2)
-  g.glTexCoord2f(0, 0) g.glVertex3f( s/2, -s/2,  s/2)
-  g.glTexCoord2f(1, 0) g.glVertex3f(-s/2, -s/2,  s/2)
+  -1, -1, -1,   0, -1,  0,   1, 1,
+   1, -1, -1,   0, -1,  0,   0, 1,
+   1, -1,  1,   0, -1,  0,   0, 0,
+  -1, -1,  1,   0, -1,  0,   1, 0,
   -- left
-  g.glNormal3f(-1, 0, 0)
-  g.glTexCoord2f(1, 1) g.glVertex3f(-s/2, -s/2, -s/2)
-  g.glTexCoord2f(0, 1) g.glVertex3f(-s/2, -s/2,  s/2)
-  g.glTexCoord2f(0, 0) g.glVertex3f(-s/2,  s/2,  s/2)
-  g.glTexCoord2f(1, 0) g.glVertex3f(-s/2,  s/2, -s/2)
+  -1, -1, -1,  -1,  0,  0,   1, 1,
+  -1, -1,  1,  -1,  0,  0,   0, 1,
+  -1,  1,  1,  -1,  0,  0,   0, 0,
+  -1,  1, -1,  -1,  0,  0,   1, 0,
   -- right
-  g.glNormal3f(1, 0, 0)
-  g.glTexCoord2f(1, 1) g.glVertex3f( s/2, -s/2,  s/2)
-  g.glTexCoord2f(0, 1) g.glVertex3f( s/2, -s/2, -s/2)
-  g.glTexCoord2f(0, 0) g.glVertex3f( s/2,  s/2, -s/2)
-  g.glTexCoord2f(1, 0) g.glVertex3f( s/2,  s/2,  s/2)
-  g.glEnd()
+   1, -1,  1,   1,  0,  0,   1, 1,
+   1, -1, -1,   1,  0,  0,   0, 1,
+   1,  1, -1,   1,  0,  0,   0, 0,
+   1,  1,  1,   1,  0,  0,   1, 0)
+-- renders solid cube with proper texture & normal map coords
+function M.SolidCube()
+  local buffer = M.GenBuffer()
+  g.glBindBuffer(g.GL_ARRAY_BUFFER, buffer)
+  g.glBufferData(g.GL_ARRAY_BUFFER, 768, M.cubeArray, g.GL_STATIC_DRAW)
+  g.glVertexAttribPointer(0, 3, g.GL_FLOAT, g.GL_FALSE, 0, glFloatp(nil))
+  g.glEnableVertexAttribArray(0)
+  g.glVertexAttribPointer(1, 3, g.GL_FLOAT, g.GL_FALSE, 0, glFloatp(nil)+3)
+  g.glEnableVertexAttribArray(1)
+  g.glVertexAttribPointer(2, 2, g.GL_FLOAT, g.GL_FALSE, 0, glFloatp(nil)+6)
+  g.glEnableVertexAttribArray(2)
 end
 
 -- index metamethod removing gl prefix for funtions

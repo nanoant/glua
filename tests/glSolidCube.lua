@@ -64,26 +64,22 @@ gl.Enable(gl.CULL_FACE)
 
 -- enable depth test & lighting
 gl.Enable(gl.DEPTH_TEST)
-gl.Enable(gl.LIGHTING)
-gl.ShadeModel(gl.SMOOTH)
-
--- set up material
-gl.Material(gl.FRONT, gl.AMBIENT,   .1, .1, .1, 1)
-gl.Material(gl.FRONT, gl.DIFFUSE,   .5, .5, .5, 1)
-gl.Material(gl.FRONT, gl.SPECULAR,  1,  1,  1,  1)
-gl.Material(gl.FRONT, gl.SHININESS, .2)
 
 -- set up position
-gl.MatrixMode(gl.MODELVIEW)
-gl.Translatef(0, 0, -2)
+-- gl.MatrixMode(gl.MODELVIEW)
+-- gl.Translatef(0, 0, -2)
 
 -- set up light
-for l = 1, #lights do
-  gl.Enable(gl.LIGHT0+l-1)
-  if lights[l].position then gl.Light(gl.LIGHT0+l-1, gl.POSITION, unpack(lights[l].position)) end
-  if lights[l].ambient  then gl.Light(gl.LIGHT0+l-1, gl.AMBIENT,  unpack(lights[l].ambient))  end
-  if lights[l].diffuse  then gl.Light(gl.LIGHT0+l-1, gl.DIFFUSE,  unpack(lights[l].diffuse))  end
-  if lights[l].specular then gl.Light(gl.LIGHT0+l-1, gl.SPECULAR, unpack(lights[l].specular)) end
+local lightPosition = gl.vvec3(#lights)
+local lightAmbient  = gl.vvec3(#lights)
+local lightDiffuse  = gl.vvec3(#lights)
+local lightSpecular = gl.vvec3(#lights)
+lightPosition[0] = gl.vec3(1,2,3)
+for l = 0, #lights-1 do
+  -- if lights[l].position then lightPosition[l] = gl.vec3(unpack(lights[l].position)) end
+  -- if lights[l].ambient  then lightAmbient[l]  = gl.vec3(unpack(lights[l].ambient))  end
+  -- if lights[l].diffuse  then lightDiffuse[l]  = gl.vec3(unpack(lights[l].diffuse))  end
+  -- if lights[l].specular then lightSpecular[l] = gl.vec3(unpack(lights[l].specular)) end
 end
 
 -- set up texture
@@ -111,7 +107,6 @@ for target, path in pairs(texturePaths) do
     data = nil
     gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
     gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-    gl.TexEnvf(gl.TEXTURE_ENV, gl.TEXTURE_ENV_MODE, gl.MODULATE)
   end
 end
 
@@ -125,7 +120,7 @@ for type, path in pairs(shaderPaths) do
   gl.ShaderSource(shader, source)
   gl.CompileShader(shader)
   if not gl.GetShader(shader, gl.COMPILE_STATUS) then
-    error(gl.GetShaderInfoLog(shader))
+    error(path.."\n"..gl.GetShaderInfoLog(shader))
   end
   gl.AttachShader(program, shader)
 end
@@ -134,23 +129,26 @@ if not gl.GetProgram(program, gl.LINK_STATUS) then
   error(gl.GetProgramInfoLog(program))
 end
 gl.UseProgram(program)
-local numLightsLocation = gl.GetUniformLocation(program, 'numLights')
-gl.Uniform1i(numLightsLocation, #lights)
-local colorLocation = gl.GetUniformLocation(program, 'colorTex')
-gl.Uniform1i(colorLocation, 0)
-local normalLocation = gl.GetUniformLocation(program, 'normalTex')
-gl.Uniform1i(normalLocation, 1)
+gl.Uniform1i(gl.GetUniformLocation(program, 'numLights'), #lights)
+gl.Uniform1i(gl.GetUniformLocation(program, 'colorTex'),  0)
+gl.Uniform1i(gl.GetUniformLocation(program, 'normalTex'), 1)
+
+-- set up material
+gl.Uniform3f(gl.GetUniformLocation(program, 'matAmbient'),   .1, .1, .1)
+gl.Uniform3f(gl.GetUniformLocation(program, 'matDiffuse'),   .5, .5, .5)
+gl.Uniform3f(gl.GetUniformLocation(program, 'matSpecular'),  1,  1,  1)
+gl.Uniform1f(gl.GetUniformLocation(program, 'matShininess'), .2)
 
 -- called upon window resize & creation
 gl.utReshapeFunc(function(w, h)
   width, height = w, h
   gl.Viewport(0, 0, w, h)
 
-  gl.MatrixMode(gl.PROJECTION)
-  gl.LoadIdentity()
-  gl.uPerspective(60, w / h, 0.2, 1000000)
-
-  gl.MatrixMode(gl.MODELVIEW)
+  local projection = gl.Perspective(60, w / h, 0.2, 1000000)
+  local modelView  = gl.Translate(0, 0, -2)
+  gl.UniformMatrix4fv(gl.GetUniformLocation(program, 'projectionMatrix'), 1, 0, projection.data)
+  gl.UniformMatrix4fv(gl.GetUniformLocation(program, 'modelViewMatrix'), 1, 0, modelView.data)
+  gl.UniformMatrix4fv(gl.GetUniformLocation(program, 'normalMatrix'), 1, 0, modelView.mat3.inv.t.data)
 end)
 
 -- idle callbacks
@@ -198,32 +196,15 @@ gl.utMouseFunc(function(button, state, x, y)
   end
 end)
 
+local solidCube = gl.SolidCube()
+
+-- FIXME: for time being
+gl.QUADS = 0x0007
+
 -- main drawing function
 gl.utDisplayFunc(function()
-
   gl.Clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT)
-
-  -- draw object
-  gl.SolidCube(1)
-
-  -- draw lights positions
-  gl.UseProgram(0)
-  gl.Disable(gl.LIGHTING)
-  gl.Disable(gl.TEXTURE_2D)
-  gl.PointSize(20)
-  gl.PushMatrix()
-  gl.Rotate(lightsRotation, unpack(lightsRotationAxis))
-  gl.Begin(gl.POINTS)
-  for l = 1, #lights do
-    if lights[l].diffuse  then gl.Color4f(unpack(lights[l].diffuse))   end
-    if lights[l].position then gl.Vertex4f(unpack(lights[l].position)) end
-  end
-  gl.End()
-  gl.PopMatrix()
-  gl.Enable(gl.TEXTURE_2D)
-  gl.Enable(gl.LIGHTING)
-  gl.UseProgram(program)
-
+  gl.DrawArrays(gl.QUADS, 0, 192)
   gl.utSwapBuffers()
 end)
 
