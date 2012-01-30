@@ -6,22 +6,20 @@ typedef union {
   struct { GLfloat x, y; };
   struct { GLfloat r, g; };
   struct { GLfloat s, t; };
+  struct { GLfloat gl[2]; };
 } GLvec2;
 typedef union {
   struct { GLfloat x, y, z; };
   struct { GLfloat r, g, b; };
   struct { GLfloat s, t, p; };
+  struct { GLfloat gl[3]; };
 } GLvec3;
 typedef union {
   struct { GLfloat x, y, z, w; };
   struct { GLfloat r, g, b, a; };
   struct { GLfloat s, t, p, q; };
+  struct { GLfloat gl[4]; };
 } GLvec4;
-typedef union {
-  struct { GLfloat x, y; };
-  struct { GLfloat r, g; };
-  struct { GLfloat s, t; };
-} GLvec2;
 ]]
 
 local vec2

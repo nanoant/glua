@@ -286,7 +286,7 @@ M.DeleteTexture = function(...)
   return M.DeleteTextures(select('#', ...), glUintv(select('#', ...), ...))
 end
 
--- buffers simplification
+-- bufs simplification
 M.GenBuffers = function(num, out)
   num = num or 1
   out = out or glUintv(num)
@@ -300,6 +300,20 @@ M.DeleteBuffer = function(...)
   return M.DeleteBuffers(select('#', ...), glUintv(select('#', ...), ...))
 end
 
+-- vertex array simplification
+M.GenVertexArrays = function(num, out)
+  num = num or 1
+  out = out or glUintv(num)
+  g.glGenVertexArrays(num, out)
+  return out
+end
+M.GenVertexArray = function()
+  return M.GenVertexArrays(1)[0]
+end
+M.DeleteVertexArray = function(...)
+  return M.DeleteVertexArrays(select('#', ...), glUintv(select('#', ...), ...))
+end
+
 -- light vaarg functions
 M.Material = function(face, type, ...)
   return g.glMaterialfv(face, type, glFloatv(select('#', ...), ...))
@@ -308,49 +322,92 @@ M.Light = function(face, type, ...)
   return g.glLightfv(face, type, glFloatv(select('#', ...), ...))
 end
 
-M.cubeArray = glFloatv(192,
+M.plane = {
   -- vertex  -- normal -- tex coord
+  -1, -1, 0,   0,  0,  1,   1, 1,
+   1, -1, 0,   0,  0,  1,   0, 1,
+   1,  1, 0,   0,  0,  1,   0, 0,
+   1,  1, 0,   0,  0,  1,   0, 0, -- dup
+  -1,  1, 0,   0,  0,  1,   1, 0,
+  -1, -1, 0,   0,  0,  1,   1, 1, -- dup
+}
+-- renders solid cube with proper texture & normal map coords
+function M.PlaneArray(program)
+  local array = M.GenVertexArray()
+  g.glBindVertexArray(array)
+  local buf = M.GenBuffer()
+  local data = glFloatv(#M.plane, M.plane)
+  local position = g.glGetAttribLocation(program, 'position')
+  local normal   = g.glGetAttribLocation(program, 'normal')
+  local texCoord = g.glGetAttribLocation(program, 'texCoord')
+  g.glBindBuffer(g.GL_ARRAY_BUFFER, buf)
+  g.glBufferData(g.GL_ARRAY_BUFFER, ffi.sizeof(glFloatv, #M.plane), data, g.GL_STATIC_DRAW)
+  g.glVertexAttribPointer(position, 3, g.GL_FLOAT, g.GL_FALSE, ffi.sizeof(glFloatv, 8), glFloatp(nil));   g.glEnableVertexAttribArray(position)
+  g.glVertexAttribPointer(normal,   3, g.GL_FLOAT, g.GL_FALSE, ffi.sizeof(glFloatv, 8), glFloatp(nil)+3); g.glEnableVertexAttribArray(normal)
+  g.glVertexAttribPointer(texCoord, 2, g.GL_FLOAT, g.GL_FALSE, ffi.sizeof(glFloatv, 8), glFloatp(nil)+6); g.glEnableVertexAttribArray(texCoord)
+  return array
+end
+
+M.cube = {
+  -- position,  normal,      tex coord
   -- front
   -1, -1,  1,   0,  0,  1,   1, 1,
    1, -1,  1,   0,  0,  1,   0, 1,
    1,  1,  1,   0,  0,  1,   0, 0,
+   1,  1,  1,   0,  0,  1,   0, 0, -- dup
   -1,  1,  1,   0,  0,  1,   1, 0,
+  -1, -1,  1,   0,  0,  1,   1, 1, -- dup
   -- back
    1, -1, -1,   0,  0, -1,   1, 1,
   -1, -1, -1,   0,  0, -1,   0, 1,
   -1,  1, -1,   0,  0, -1,   0, 0,
+  -1,  1, -1,   0,  0, -1,   0, 0, -- dup
    1,  1, -1,   0,  0, -1,   1, 0,
+   1, -1, -1,   0,  0, -1,   1, 1, -- dup
   -- top
    1,  1, -1,   0,  1,  0,   1, 1,
   -1,  1, -1,   0,  1,  0,   0, 1,
   -1,  1,  1,   0,  1,  0,   0, 0,
+  -1,  1,  1,   0,  1,  0,   0, 0, -- dup
    1,  1,  1,   0,  1,  0,   1, 0,
+   1,  1, -1,   0,  1,  0,   1, 1, -- dup
   -- bottom
   -1, -1, -1,   0, -1,  0,   1, 1,
    1, -1, -1,   0, -1,  0,   0, 1,
    1, -1,  1,   0, -1,  0,   0, 0,
+   1, -1,  1,   0, -1,  0,   0, 0, -- dup
   -1, -1,  1,   0, -1,  0,   1, 0,
+  -1, -1, -1,   0, -1,  0,   1, 1, -- dup
   -- left
   -1, -1, -1,  -1,  0,  0,   1, 1,
   -1, -1,  1,  -1,  0,  0,   0, 1,
   -1,  1,  1,  -1,  0,  0,   0, 0,
+  -1,  1,  1,  -1,  0,  0,   0, 0, -- dup
   -1,  1, -1,  -1,  0,  0,   1, 0,
+  -1, -1, -1,  -1,  0,  0,   1, 1, -- dup
   -- right
    1, -1,  1,   1,  0,  0,   1, 1,
    1, -1, -1,   1,  0,  0,   0, 1,
    1,  1, -1,   1,  0,  0,   0, 0,
-   1,  1,  1,   1,  0,  0,   1, 0)
+   1,  1, -1,   1,  0,  0,   0, 0, -- dup
+   1,  1,  1,   1,  0,  0,   1, 0,
+   1, -1,  1,   1,  0,  0,   1, 1  -- dup
+}
 -- renders solid cube with proper texture & normal map coords
-function M.SolidCube()
-  local buffer = M.GenBuffer()
-  g.glBindBuffer(g.GL_ARRAY_BUFFER, buffer)
-  g.glBufferData(g.GL_ARRAY_BUFFER, 768, M.cubeArray, g.GL_STATIC_DRAW)
-  g.glVertexAttribPointer(0, 3, g.GL_FLOAT, g.GL_FALSE, 0, glFloatp(nil))
-  g.glEnableVertexAttribArray(0)
-  g.glVertexAttribPointer(1, 3, g.GL_FLOAT, g.GL_FALSE, 0, glFloatp(nil)+3)
-  g.glEnableVertexAttribArray(1)
-  g.glVertexAttribPointer(2, 2, g.GL_FLOAT, g.GL_FALSE, 0, glFloatp(nil)+6)
-  g.glEnableVertexAttribArray(2)
+function M.CubeArray(program)
+  local array = M.GenVertexArray()
+  g.glBindVertexArray(array)
+  local buf = M.GenBuffer()
+  local data = glFloatv(#M.cube, M.cube)
+  local position = g.glGetAttribLocation(program, 'position')
+  local normal   = g.glGetAttribLocation(program, 'normal')
+  local texCoord = g.glGetAttribLocation(program, 'texCoord')
+  g.glBindBuffer(g.GL_ARRAY_BUFFER, buf)
+  g.glBufferData(g.GL_ARRAY_BUFFER, ffi.sizeof(glFloatv, #M.cube), data, g.GL_STATIC_DRAW)
+  g.glVertexAttribPointer(position, 3, g.GL_FLOAT, g.GL_FALSE, ffi.sizeof(glFloatv, 8), glFloatp(nil));   g.glEnableVertexAttribArray(position)
+  g.glVertexAttribPointer(normal,   3, g.GL_FLOAT, g.GL_FALSE, ffi.sizeof(glFloatv, 8), glFloatp(nil)+3); g.glEnableVertexAttribArray(normal)
+  g.glVertexAttribPointer(texCoord, 2, g.GL_FLOAT, g.GL_FALSE, ffi.sizeof(glFloatv, 8), glFloatp(nil)+6); g.glEnableVertexAttribArray(texCoord)
+  return array
 end
 
 -- index metamethod removing gl prefix for funtions

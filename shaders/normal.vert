@@ -1,4 +1,4 @@
-#version 110
+#version 150 core
 
 uniform int numLights;
 
@@ -9,19 +9,20 @@ uniform mat3 normalMatrix;
 
 uniform vec3 lightPosition[gl_MaxLights];
 
-varying vec3 lightDirection[gl_MaxLights]; // light direction vector in tangent space
-varying vec3 eyeDirection;                 // eye direction vector in tangent space
+in vec3 position;
+in vec3 normal;
+in vec2 texCoord;
 
-attribute vec3 vertex;
-attribute vec2 texCoord;
-attribute vec3 normal;
+out vec3 lightDirection[gl_MaxLights]; // light direction vector in tangent space
+out vec3 eyeDirection;                 // eye direction vector in tangent space
+out vec2 fragTexCoord;
 
 // TODO: replace with the precalculated version
 vec3 tangent()
 {
 	vec3 tangent;
-	vec3 c1 = cross(gl_Normal, vec3(0.0, 0.0, 1.0));
-	vec3 c2 = cross(gl_Normal, vec3(0.0, 1.0, 0.0));
+	vec3 c1 = cross(normal, vec3(0.0, 0.0, 1.0));
+	vec3 c2 = cross(normal, vec3(0.0, 1.0, 0.0));
 	
 	if(length(c1) > length(c2)) {
 		tangent = c1;
@@ -33,15 +34,15 @@ vec3 tangent()
 
 void main()
 {
-	gl_TexCoord[0] = gl_MultiTexCoord0;
-	gl_Position = modelViewProjectionMatrix * vec4(vertex, 1);
+	fragTexCoord = texCoord;
+	gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);
 
 	// http://www.ozone3d.net/tutorials/bump_mapping_p4.php
 	vec3 n = normalMatrix * normal;
 	vec3 t = normalize(normalMatrix * tangent());
 	vec3 b = cross(n, t);
 
-	vec3 vertex = vec3(modelViewMatrix * vec4(vertex, 1));
+	vec3 vertex = vec3(modelViewMatrix * vec4(position, 1));
 	vec3 tmp;
 
 	for(int i = 0; i < numLights; i++) {

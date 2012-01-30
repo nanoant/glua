@@ -19,8 +19,9 @@ local m = gl.mat(2,1,0,0,
                  0,0,0,1)
 print(m.inv.inv); print()
 
-local trans = gl.Translate(1,2,3)
+local trans = gl.Translate(0,0,-2)
 
 print(trans*gl.vec(1,1,1,1)); print()
 
-print(gl.Perspective(60, 640 / 480, 0.2, 1000000).mat3.inv.t)
+-- print(gl.Perspective(60, 640 / 480, 0.2, 1000000).mat3.inv.t)
+print(trans.inv.t.mat3)

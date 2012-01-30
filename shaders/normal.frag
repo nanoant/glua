@@ -1,4 +1,4 @@
-#version 110
+#version 150 core
 
 uniform int numLights;
 
@@ -6,21 +6,24 @@ uniform vec3 lightDiffuse[gl_MaxLights];
 uniform vec3 lightSpecular[gl_MaxLights];
 uniform vec3 lightAmbient[gl_MaxLights];
 
-uniform vec3 matDiffuse;
-uniform vec3 matSpecular;
-uniform vec3 matAmbient;
-uniform float matShininess;
+uniform vec3  materialDiffuse;
+uniform vec3  materialSpecular;
+uniform vec3  materialAmbient;
+uniform float materialShininess;
 
 uniform sampler2D colorTex;
 uniform sampler2D normalTex;
 
-varying vec3 lightDirection[gl_MaxLights]; // light direction vector in tangent space
-varying vec3 eyeDirection;                 // eye direction vector in tangent space
+in vec3 lightDirection[gl_MaxLights]; // light direction vector in tangent space
+in vec3 eyeDirection;                 // eye direction vector in tangent space
+in vec2 fragTexCoord;
+
+out vec4 fragColor;
 
 void main()
 {
-	vec4 texColor   = texture2D(colorTex,  vec2(gl_TexCoord[0].st));
-	vec3 texNormal  = texture2D(normalTex, vec2(gl_TexCoord[0].st)).xyz;
+	vec4 texColor   = texture(colorTex,  fragTexCoord);
+	vec3 texNormal  = texture(normalTex, fragTexCoord).xyz;
 
 	vec3 nnormal    = normalize(texNormal * 2.0 - 1.0);
 	vec3 neye       = normalize(eyeDirection);
@@ -30,13 +33,13 @@ void main()
 	for(int i = 0; i < numLights; i++) {
 		vec3  nlight     = normalize(lightDirection[i]);
 		float idiffuse   = max(dot(nlight, nnormal), 0.0);
-		float ispecular  = pow(clamp(dot(-reflect(nlight, nnormal), neye), 0.0, 1.0), matShininess);
+		float ispecular  = pow(clamp(dot(-reflect(nlight, nnormal), neye), 0.0, 1.0), materialShininess);
 
-		vec3 diffuse     = matDiffuse  * lightDiffuse[i]  * idiffuse;
-		vec3 specular    = matSpecular * lightSpecular[i] * ispecular * idiffuse;
-		vec3 ambient     = matAmbient  * lightAmbient[i];
+		vec3 diffuse     = materialDiffuse  * lightDiffuse[i]  * idiffuse;
+		vec3 specular    = materialSpecular * lightSpecular[i] * ispecular * idiffuse;
+		vec3 ambient     = materialAmbient  * lightAmbient[i];
 
 		lightColor += clamp(ambient + diffuse + specular, 0.0, 1.0);
 	}
-	gl_FragColor = vec4(lightColor * texColor.rgb, texColor.a);
+	fragColor = vec4(lightColor * texColor.rgb, texColor.a);
 }

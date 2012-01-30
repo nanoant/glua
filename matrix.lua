@@ -12,7 +12,7 @@ typedef union {
   struct {
     GLfloat a, b, c, d;
   };
-  GLfloat data[4];
+  GLfloat gl[4];
 } GLmat2;
 typedef union {
   struct {
@@ -23,7 +23,7 @@ typedef union {
   struct {
     GLfloat a, b, c, d, e, f, g, h, k;
   };
-  GLfloat data[9];
+  GLfloat gl[9];
 } GLmat3;
 typedef union {
   struct {
@@ -38,7 +38,7 @@ typedef union {
     GLfloat i, j, k, l;
     GLfloat m, n, o, p;
   };
-  GLfloat data[16];
+  GLfloat gl[16];
 } GLmat4;
 ]]
 
@@ -262,7 +262,7 @@ M.identity4 = mat4(1, 0, 0, 0,
                    0, 1, 0, 0,
                    0, 0, 1, 0,
                    0, 0, 0, 1)
-M.indentity = M.identity4
+M.identity = M.identity4
 
 function M.Translate(x, y, z)
   if ffi.istype(vec2, x) then
@@ -282,17 +282,15 @@ function M.Translate(x, y, z)
 end
 
 function M.Frustum(l, r, b, t, n, f)
-  return mat4(2/(r-l),       0,  (r+l)/(r-l),            0,
-                    0, 2/(t-b),  (t+b)/(t-b),            0,
-                    0,       0, -(f+n)/(f-n), -2*n*f/(f-n),
-                    0,       0,           -1,            0)
+  return mat4(2*n/(r-l),         0,  (r+l)/(r-l),            0,
+                      0, 2*n/(t-b),  (t+b)/(t-b),            0,
+                      0,         0, -(f+n)/(f-n), -2*n*f/(f-n),
+                      0,         0,           -1,            0)
 end
 function M.Perspective(fovy, aspect, n, f)
    local t = n * math.tan(fovy * math.pi / 360.0)
-   local b = -t
-   local l = t * aspect
-   local r = b * aspect
-   return M.Frustum(l, r, b, t, n, f)
+   local r = t * aspect
+   return M.Frustum(-r, r, -t, t, n, f)
 end
 function M.Ortho(l, r, b, t, n, f)
   return mat4(2/(r-l),       0,        0, -(r+l)/(r-l),
