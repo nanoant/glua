@@ -6,24 +6,21 @@
 -- Usage: Use left mouse button to rotate cube, right mouse button to rotate lights
 
 local gl = require 'gl'
-local ok, imglib = pcall(require, 'mac.CoreGraphics')
-if not ok then imglib = require 'lib.png' end
 
 -- http://www.tutorialsforblender3d.com/Textures/Bricks-NormalMap/Bricks_Normal_1.html
 -- http://www.tutorialsforblender3d.com/Textures/Wall-NormalMap/Wall_Normal_1.html
-local texturePaths = {
+local textures = {
   [0] = 'textures/GraniteWall-ColorMap.png',
   [1] = 'textures/GraniteWall-NormalMap.png'
-  -- [0] = 'textures/AncientStoneSlabs-ColorMap.png',
-  -- [1] = 'textures/AncientStoneSlabs-NormalMap.png'
 }
-
-local shaderPaths = {
+local normalShader = {
   [gl.VERTEX_SHADER]   = 'shaders/normal.vert',
   [gl.FRAGMENT_SHADER] = 'shaders/normal.frag'
-  -- [gl.GEOMETRY_SHADER] = 'shaders/passthrough.geom'
 }
-
+local colorShader = {
+  [gl.VERTEX_SHADER]   = 'shaders/color.vert',
+  [gl.FRAGMENT_SHADER] = 'shaders/color.frag'
+}
 local lights = {
   {
     position = {  1,  0,  1  },
@@ -64,73 +61,30 @@ gl.Enable(gl.CULL_FACE)
 gl.Enable(gl.DEPTH_TEST)
 
 -- set up texture
-local textures = gl.GenTextures(2)
-local storageMap = {
-  [1] = gl.ALPHA,
-  [3] = gl.RGB,
-  [4] = gl.RGBA
-}
-for target, path in pairs(texturePaths) do
-  local texture = textures[target] -- zero indexed
-  local data, width, height, channels = imglib.bitmap(path)
-  if data then
-    local storage = storageMap[channels]
-    gl.ActiveTexture(gl.TEXTURE0 + target)
-    gl.BindTexture(gl.TEXTURE_2D, texture)
-    gl.uBuild2DMipmaps(gl.TEXTURE_2D,    -- texture to specify
-                        storage,            -- internal texture storage format
-                        width,              -- texture width
-                        height,             -- texture height
-                        storage,            -- pixel format
-                        gl.UNSIGNED_BYTE, -- color component format
-                        data)               -- pointer to texture image
-    data = nil
-    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-  end
-end
+local textures = gl.Textures(textures)
 
 -- load shaders
-local program = gl.CreateProgram()
-for type, path in pairs(shaderPaths) do
-  local f = assert(io.open(path, 'rb'))
-  local source = f:read('*all')
-  local shader = gl.CreateShader(type)
-  f:close()
-  gl.ShaderSource(shader, source)
-  gl.CompileShader(shader)
-  if not gl.GetShader(shader, gl.COMPILE_STATUS) then
-    error(path.."\n"..gl.GetShaderInfoLog(shader))
-  end
-  gl.AttachShader(program, shader)
-end
-gl.BindAttribLocation(program,   0, 'position')
-gl.BindAttribLocation(program,   1, 'normal')
-gl.BindAttribLocation(program,   2, 'texCoord')
--- gl.BindFragDataLocation(program, 0, 'fragColor')
-gl.LinkProgram(program)
-if not gl.GetProgram(program, gl.LINK_STATUS) then
-  error(gl.GetProgramInfoLog(program))
-end
-gl.UseProgram(program)
+local normalProgram = gl.Program(normalShader)
+-- local colorProgram = gl.Program(colorShader)
+gl.UseProgram(normalProgram)
 
 -- uniforms
-local numLights         = gl.GetUniformLocation(program, 'numLights')
-local colorTex          = gl.GetUniformLocation(program, 'colorTex')
-local normalTex         = gl.GetUniformLocation(program, 'normalTex')
-local materialAmbient   = gl.GetUniformLocation(program, 'materialAmbient')
-local materialDiffuse   = gl.GetUniformLocation(program, 'materialDiffuse')
-local materialSpecular  = gl.GetUniformLocation(program, 'materialSpecular')
-local materialShininess = gl.GetUniformLocation(program, 'materialShininess')
-local projectionMatrix  = gl.GetUniformLocation(program, 'projectionMatrix')
-local lightMatrix       = gl.GetUniformLocation(program, 'lightMatrix')
-local modelViewMatrix   = gl.GetUniformLocation(program, 'modelViewMatrix')
-local mvpMatrix         = gl.GetUniformLocation(program, 'modelViewProjectionMatrix')
-local normalMatrix      = gl.GetUniformLocation(program, 'normalMatrix')
-local lightPosition     = gl.GetUniformLocation(program, 'lightPosition')
-local lightAmbient      = gl.GetUniformLocation(program, 'lightAmbient')
-local lightDiffuse      = gl.GetUniformLocation(program, 'lightDiffuse')
-local lightSpecular     = gl.GetUniformLocation(program, 'lightSpecular')
+local numLights         = gl.GetUniformLocation(normalProgram, 'numLights')
+local colorTex          = gl.GetUniformLocation(normalProgram, 'colorTex')
+local normalTex         = gl.GetUniformLocation(normalProgram, 'normalTex')
+local materialAmbient   = gl.GetUniformLocation(normalProgram, 'materialAmbient')
+local materialDiffuse   = gl.GetUniformLocation(normalProgram, 'materialDiffuse')
+local materialSpecular  = gl.GetUniformLocation(normalProgram, 'materialSpecular')
+local materialShininess = gl.GetUniformLocation(normalProgram, 'materialShininess')
+local projectionMatrix  = gl.GetUniformLocation(normalProgram, 'projectionMatrix')
+local lightMatrix       = gl.GetUniformLocation(normalProgram, 'lightMatrix')
+local modelViewMatrix   = gl.GetUniformLocation(normalProgram, 'modelViewMatrix')
+local mvpMatrix         = gl.GetUniformLocation(normalProgram, 'modelViewProjectionMatrix')
+local normalMatrix      = gl.GetUniformLocation(normalProgram, 'normalMatrix')
+local lightPosition     = gl.GetUniformLocation(normalProgram, 'lightPosition')
+local lightAmbient      = gl.GetUniformLocation(normalProgram, 'lightAmbient')
+local lightDiffuse      = gl.GetUniformLocation(normalProgram, 'lightDiffuse')
+local lightSpecular     = gl.GetUniformLocation(normalProgram, 'lightSpecular')
 
 -- set up lights
 gl.Uniform1i(numLights, #lights)
@@ -160,8 +114,8 @@ gl.Uniform3f(materialSpecular,  1,  1,  1)
 gl.Uniform1f(materialShininess, .2)
 
 -- load solid cube buffer
-local cubeArray  = gl.CubeArray(program)
--- local planeArray = gl.PlaneArray(program)
+local cubeArray  = gl.CubeArray(normalProgram)
+-- local planeArray = gl.PlaneArray(normalProgram)
 
 local projection = gl.identity
 local view       = gl.Translate(0,0,-4)

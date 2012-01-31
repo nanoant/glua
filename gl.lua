@@ -1,9 +1,30 @@
 -- LuaJIT FFI extensions for OpenGL & GLUT
 -- Created by: Adam Strzelecki http://www.nanoant.com/
 
-local g   = require 'gl.glut'
+local lib = require 'gl.glut'
 local ffi = require 'ffi'
-local M   = require 'matrix'
+local gl  = require 'matrix' -- inherit matrix operators
+
+-- load image library, use CoreGraphics on Mac
+-- and libpng on other platforms
+local ok, imglib = pcall(require, 'mac.CoreGraphics')
+if not ok then imglib = require 'lib.png' end
+
+-- index metamethod removing gl prefix for funtions
+-- and GL_ prefix for constants
+setmetatable(gl, { __index = function(t, n)
+  local s
+  -- all functions contain at least one small letter
+  if n:find('[a-z]') then
+    s = lib['gl'..n]
+  elseif n:find('^UT?_') then
+    s = lib['GL'..n]
+  else
+    s = lib['GL_'..n]
+  end
+  rawset(t, n, s)
+  return s
+end })
 
 -- float vector type
 local glFloatp   = ffi.typeof('GLfloat *')
@@ -25,159 +46,159 @@ ffi.cdef [[
   typedef void (*glutTimerCallback)(int value);
   typedef void (*glutIdleCallback)(void);
 ]]
-M.utTimerCallback = function(f) return ffi.cast('glutTimerCallback', f) end
-M.utIdleCallback  = function(f) return ffi.cast('glutIdleCallback', f)  end
+function gl.utTimerCallback(f) return ffi.cast('glutTimerCallback', f) end
+function gl.utIdleCallback(f)  return ffi.cast('glutIdleCallback', f)  end
 
 -- automatic vector generating get
 -- http://www.opengl.org/sdk/docs/man/xhtml/glGet.xml
 local glGetMap = {
-  [g.GL_ACTIVE_TEXTURE]                       = {  1, glEnumv    },
-  [g.GL_ALIASED_LINE_WIDTH_RANGE]             = {  2, glFloatv   },
-  [g.GL_ARRAY_BUFFER_BINDING]                 = {  1, glUintv    },
-  [g.GL_BLEND]                                = {  1, glBooleanv },
-  [g.GL_BLEND_COLOR]                          = {  4, glFloatv   },
-  [g.GL_BLEND_DST_ALPHA]                      = {  1, glEnumv    },
-  [g.GL_BLEND_DST_RGB]                        = {  1, glEnumv    },
-  [g.GL_BLEND_EQUATION_RGB]                   = {  1, glEnumv    },
-  [g.GL_BLEND_EQUATION_ALPHA]                 = {  1, glEnumv    },
-  [g.GL_BLEND_SRC_ALPHA]                      = {  1, glEnumv    },
-  [g.GL_BLEND_SRC_RGB]                        = {  1, glEnumv    },
-  [g.GL_COLOR_CLEAR_VALUE]                    = {  4, glFloatv   },
-  [g.GL_COLOR_LOGIC_OP]                       = {  1, glEnumv    },
-  [g.GL_COLOR_WRITEMASK]                      = {  4, glBooleanv },
-  [g.GL_COMPRESSED_TEXTURE_FORMATS]           = { g.GL_NUM_COMPRESSED_TEXTURE_FORMATS, glEnumv },
-  [g.GL_CULL_FACE]                            = {  1, glBooleanv },
-  [g.GL_CULL_FACE_MODE]                       = {  1, glEnumv    },
-  [g.GL_CURRENT_PROGRAM]                      = {  1, glUintv    },
-  [g.GL_DEPTH_CLEAR_VALUE]                    = {  1, glClampd   },
-  [g.GL_DEPTH_FUNC]                           = {  1, glEnumv    },
-  [g.GL_DEPTH_RANGE]                          = {  2, glClampd   },
-  [g.GL_DEPTH_TEST]                           = {  1, glBooleanv },
-  [g.GL_DEPTH_WRITEMASK]                      = {  1, glBooleanv },
-  [g.GL_DITHER]                               = {  1, glBooleanv },
-  [g.GL_DOUBLEBUFFER]                         = {  1, glBooleanv },
-  [g.GL_DRAW_BUFFER]                          = {  1, glEnumv    },
-  [g.GL_DRAW_BUFFER0]                         = {  1, glEnumv    },
-  [g.GL_DRAW_BUFFER1]                         = {  1, glEnumv    },
-  [g.GL_DRAW_BUFFER2]                         = {  1, glEnumv    },
-  [g.GL_DRAW_BUFFER3]                         = {  1, glEnumv    },
-  [g.GL_DRAW_BUFFER4]                         = {  1, glEnumv    },
-  [g.GL_DRAW_BUFFER5]                         = {  1, glEnumv    },
-  [g.GL_DRAW_BUFFER6]                         = {  1, glEnumv    },
-  [g.GL_DRAW_BUFFER7]                         = {  1, glEnumv    },
-  [g.GL_DRAW_BUFFER8]                         = {  1, glEnumv    },
-  [g.GL_DRAW_BUFFER9]                         = {  1, glEnumv    },
-  [g.GL_DRAW_BUFFER10]                        = {  1, glEnumv    },
-  [g.GL_DRAW_BUFFER11]                        = {  1, glEnumv    },
-  [g.GL_DRAW_BUFFER12]                        = {  1, glEnumv    },
-  [g.GL_DRAW_BUFFER13]                        = {  1, glEnumv    },
-  [g.GL_DRAW_BUFFER14]                        = {  1, glEnumv    },
-  [g.GL_DRAW_BUFFER15]                        = {  1, glEnumv    },
-  [g.GL_ELEMENT_ARRAY_BUFFER_BINDING]         = {  1, glUintv    },
-  [g.GL_FRAGMENT_SHADER_DERIVATIVE_HINT]      = {  1, glEnumv    },
-  [g.GL_FRONT_FACE]                           = {  1, glEnumv    },
-  [g.GL_LINE_SMOOTH]                          = {  1, glBooleanv },
-  [g.GL_LINE_SMOOTH_HINT]                     = {  1, glEnumv    },
-  [g.GL_LINE_WIDTH]                           = {  1, glFloatv   },
-  [g.GL_LINE_WIDTH_GRANULARITY]               = {  1, glFloatv   },
-  [g.GL_LINE_WIDTH_RANGE]                     = {  2, glFloatv   },
-  [g.GL_LOGIC_OP_MODE]                        = {  1, glEnumv    },
-  [g.GL_MAX_3D_TEXTURE_SIZE]                  = {  1, glSizeiv   },
-  [g.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS]     = {  1, glSizeiv   },
-  [g.GL_MAX_CUBE_MAP_TEXTURE_SIZE]            = {  1, glSizeiv   },
-  [g.GL_MAX_DRAW_BUFFERS]                     = {  1, glSizeiv   },
-  [g.GL_MAX_ELEMENTS_INDICES]                 = {  1, glSizeiv   },
-  [g.GL_MAX_ELEMENTS_VERTICES]                = {  1, glSizeiv   },
-  [g.GL_MAX_FRAGMENT_UNIFORM_COMPONENTS]      = {  1, glSizeiv   },
-  [g.GL_MAX_TEXTURE_IMAGE_UNITS]              = {  1, glSizeiv   },
-  [g.GL_MAX_TEXTURE_LOD_BIAS]                 = {  1, glSizeiv   },
-  [g.GL_MAX_TEXTURE_SIZE]                     = {  1, glSizeiv   },
-  [g.GL_MAX_VARYING_FLOATS]                   = {  1, glSizeiv   },
-  [g.GL_MAX_VERTEX_ATTRIBS]                   = {  1, glSizeiv   },
-  [g.GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS]       = {  1, glSizeiv   },
-  [g.GL_MAX_VERTEX_UNIFORM_COMPONENTS]        = {  1, glSizeiv   },
-  [g.GL_MAX_VIEWPORT_DIMS]                    = {  2, glSizeiv   },
-  [g.GL_NUM_COMPRESSED_TEXTURE_FORMATS]       = {  1, glUintv    },
-  [g.GL_PACK_ALIGNMENT]                       = {  1, glUintv    },
-  [g.GL_PACK_IMAGE_HEIGHT]                    = {  1, glUintv    },
-  [g.GL_PACK_LSB_FIRST]                       = {  1, glBooleanv },
-  [g.GL_PACK_ROW_LENGTH]                      = {  1, glUintv    },
-  [g.GL_PACK_SKIP_IMAGES]                     = {  1, glUintv    },
-  [g.GL_PACK_SKIP_PIXELS]                     = {  1, glUintv    },
-  [g.GL_PACK_SKIP_ROWS]                       = {  1, glUintv    },
-  [g.GL_PACK_SWAP_BYTES]                      = {  1, glBooleanv },
-  [g.GL_PIXEL_PACK_BUFFER_BINDING]            = {  1, glUintv    },
-  [g.GL_PIXEL_UNPACK_BUFFER_BINDING]          = {  1, glUintv    },
-  [g.GL_POINT_FADE_THRESHOLD_SIZE]            = {  1, glFloatv   },
-  [g.GL_POINT_SIZE]                           = {  1, glFloatv   },
-  [g.GL_POINT_SIZE_GRANULARITY]               = {  1, glFloatv   },
-  [g.GL_POINT_SIZE_RANGE]                     = {  1, glFloatv   },
-  [g.GL_POLYGON_OFFSET_FACTOR]                = {  1, glFloatv   },
-  [g.GL_POLYGON_OFFSET_UNITS]                 = {  1, glFloatv   },
-  [g.GL_POLYGON_OFFSET_FILL]                  = {  1, glBooleanv },
-  [g.GL_POLYGON_OFFSET_LINE]                  = {  1, glBooleanv },
-  [g.GL_POLYGON_OFFSET_POINT]                 = {  1, glBooleanv },
-  [g.GL_POLYGON_SMOOTH]                       = {  1, glBooleanv },
-  [g.GL_POLYGON_SMOOTH_HINT]                  = {  1, glEnumv    },
-  [g.GL_READ_BUFFER]                          = {  1, glEnumv    },
-  [g.GL_SAMPLE_BUFFERS]                       = {  1, glSizeiv   },
-  [g.GL_SAMPLE_COVERAGE_VALUE]                = {  1, glFloatv   },
-  [g.GL_SAMPLE_COVERAGE_INVERT]               = {  1, glBooleanv },
-  [g.GL_SAMPLES]                              = {  1, glSizeiv   },
-  [g.GL_SCISSOR_BOX]                          = {  4, glUintv    },
-  [g.GL_SCISSOR_TEST]                         = {  1, glBooleanv },
-  [g.GL_SMOOTH_LINE_WIDTH_RANGE]              = {  2, glFloatv   },
-  [g.GL_SMOOTH_LINE_WIDTH_GRANULARITY]        = {  1, glFloatv   },
-  [g.GL_SMOOTH_POINT_SIZE_RANGE]              = {  2, glFloatv   },
-  [g.GL_SMOOTH_POINT_SIZE_GRANULARITY]        = {  1, glFloatv   },
-  [g.GL_STENCIL_BACK_FAIL]                    = {  1, glEnumv    },
-  [g.GL_STENCIL_BACK_FUNC]                    = {  1, glEnumv    },
-  [g.GL_STENCIL_BACK_PASS_DEPTH_FAIL]         = {  1, glEnumv    },
-  [g.GL_STENCIL_BACK_PASS_DEPTH_PASS]         = {  1, glEnumv    },
-  [g.GL_STENCIL_BACK_REF]                     = {  1, glIntv     },
-  [g.GL_STENCIL_BACK_VALUE_MASK]              = {  1, glUintv    },
-  [g.GL_STENCIL_BACK_WRITEMASK]               = {  1, glUintv    },
-  [g.GL_STENCIL_CLEAR_VALUE]                  = {  1, glIntv     },
-  [g.GL_STENCIL_FAIL]                         = {  1, glEnumv    },
-  [g.GL_STENCIL_FUNC]                         = {  1, glEnumv    },
-  [g.GL_STENCIL_PASS_DEPTH_FAIL]              = {  1, glEnumv    },
-  [g.GL_STENCIL_PASS_DEPTH_PASS]              = {  1, glEnumv    },
-  [g.GL_STENCIL_REF]                          = {  1, glIntv     },
-  [g.GL_STENCIL_TEST]                         = {  1, glBooleanv },
-  [g.GL_STENCIL_VALUE_MASK]                   = {  1, glUintv    },
-  [g.GL_STENCIL_WRITEMASK]                    = {  1, glUintv    },
-  [g.GL_STEREO]                               = {  1, glBooleanv },
-  [g.GL_SUBPIXEL_BITS]                        = {  1, glSizeiv   },
-  [g.GL_TEXTURE_1D]                           = {  1, glBooleanv },
-  [g.GL_TEXTURE_BINDING_1D]                   = {  1, glUintv    },
-  [g.GL_TEXTURE_2D]                           = {  1, glBooleanv },
-  [g.GL_TEXTURE_BINDING_2D]                   = {  1, glUintv    },
-  [g.GL_TEXTURE_3D]                           = {  1, glBooleanv },
-  [g.GL_TEXTURE_BINDING_3D]                   = {  1, glUintv    },
-  [g.GL_TEXTURE_BINDING_CUBE_MAP]             = {  1, glUintv    },
-  [g.GL_TEXTURE_COMPRESSION_HINT]             = {  1, glEnumv    },
-  [g.GL_TEXTURE_CUBE_MAP]                     = {  1, glBooleanv },
-  [g.GL_UNPACK_ALIGNMENT]                     = {  1, glUintv    },
-  [g.GL_UNPACK_IMAGE_HEIGHT]                  = {  1, glUintv    },
-  [g.GL_UNPACK_LSB_FIRST]                     = {  1, glUintv    },
-  [g.GL_UNPACK_ROW_LENGTH]                    = {  1, glUintv    },
-  [g.GL_UNPACK_SKIP_IMAGES]                   = {  1, glUintv    },
-  [g.GL_UNPACK_SKIP_PIXELS]                   = {  1, glUintv    },
-  [g.GL_UNPACK_SKIP_ROWS]                     = {  1, glUintv    },
-  [g.GL_UNPACK_SWAP_BYTES]                    = {  1, glBooleanv },
-  [g.GL_VIEWPORT]                             = {  4, glUintv    }
+  [gl.ACTIVE_TEXTURE]                       = {  1, glEnumv    },
+  [gl.ALIASED_LINE_WIDTH_RANGE]             = {  2, glFloatv   },
+  [gl.ARRAY_BUFFER_BINDING]                 = {  1, glUintv    },
+  [gl.BLEND]                                = {  1, glBooleanv },
+  [gl.BLEND_COLOR]                          = {  4, glFloatv   },
+  [gl.BLEND_DST_ALPHA]                      = {  1, glEnumv    },
+  [gl.BLEND_DST_RGB]                        = {  1, glEnumv    },
+  [gl.BLEND_EQUATION_RGB]                   = {  1, glEnumv    },
+  [gl.BLEND_EQUATION_ALPHA]                 = {  1, glEnumv    },
+  [gl.BLEND_SRC_ALPHA]                      = {  1, glEnumv    },
+  [gl.BLEND_SRC_RGB]                        = {  1, glEnumv    },
+  [gl.COLOR_CLEAR_VALUE]                    = {  4, glFloatv   },
+  [gl.COLOR_LOGIC_OP]                       = {  1, glEnumv    },
+  [gl.COLOR_WRITEMASK]                      = {  4, glBooleanv },
+  [gl.COMPRESSED_TEXTURE_FORMATS]           = { gl.NUM_COMPRESSED_TEXTURE_FORMATS, glEnumv },
+  [gl.CULL_FACE]                            = {  1, glBooleanv },
+  [gl.CULL_FACE_MODE]                       = {  1, glEnumv    },
+  [gl.CURRENT_PROGRAM]                      = {  1, glUintv    },
+  [gl.DEPTH_CLEAR_VALUE]                    = {  1, glClampd   },
+  [gl.DEPTH_FUNC]                           = {  1, glEnumv    },
+  [gl.DEPTH_RANGE]                          = {  2, glClampd   },
+  [gl.DEPTH_TEST]                           = {  1, glBooleanv },
+  [gl.DEPTH_WRITEMASK]                      = {  1, glBooleanv },
+  [gl.DITHER]                               = {  1, glBooleanv },
+  [gl.DOUBLEBUFFER]                         = {  1, glBooleanv },
+  [gl.DRAW_BUFFER]                          = {  1, glEnumv    },
+  [gl.DRAW_BUFFER0]                         = {  1, glEnumv    },
+  [gl.DRAW_BUFFER1]                         = {  1, glEnumv    },
+  [gl.DRAW_BUFFER2]                         = {  1, glEnumv    },
+  [gl.DRAW_BUFFER3]                         = {  1, glEnumv    },
+  [gl.DRAW_BUFFER4]                         = {  1, glEnumv    },
+  [gl.DRAW_BUFFER5]                         = {  1, glEnumv    },
+  [gl.DRAW_BUFFER6]                         = {  1, glEnumv    },
+  [gl.DRAW_BUFFER7]                         = {  1, glEnumv    },
+  [gl.DRAW_BUFFER8]                         = {  1, glEnumv    },
+  [gl.DRAW_BUFFER9]                         = {  1, glEnumv    },
+  [gl.DRAW_BUFFER10]                        = {  1, glEnumv    },
+  [gl.DRAW_BUFFER11]                        = {  1, glEnumv    },
+  [gl.DRAW_BUFFER12]                        = {  1, glEnumv    },
+  [gl.DRAW_BUFFER13]                        = {  1, glEnumv    },
+  [gl.DRAW_BUFFER14]                        = {  1, glEnumv    },
+  [gl.DRAW_BUFFER15]                        = {  1, glEnumv    },
+  [gl.ELEMENT_ARRAY_BUFFER_BINDING]         = {  1, glUintv    },
+  [gl.FRAGMENT_SHADER_DERIVATIVE_HINT]      = {  1, glEnumv    },
+  [gl.FRONT_FACE]                           = {  1, glEnumv    },
+  [gl.LINE_SMOOTH]                          = {  1, glBooleanv },
+  [gl.LINE_SMOOTH_HINT]                     = {  1, glEnumv    },
+  [gl.LINE_WIDTH]                           = {  1, glFloatv   },
+  [gl.LINE_WIDTH_GRANULARITY]               = {  1, glFloatv   },
+  [gl.LINE_WIDTH_RANGE]                     = {  2, glFloatv   },
+  [gl.LOGIC_OP_MODE]                        = {  1, glEnumv    },
+  [gl.MAX_3D_TEXTURE_SIZE]                  = {  1, glSizeiv   },
+  [gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS]     = {  1, glSizeiv   },
+  [gl.MAX_CUBE_MAP_TEXTURE_SIZE]            = {  1, glSizeiv   },
+  [gl.MAX_DRAW_BUFFERS]                     = {  1, glSizeiv   },
+  [gl.MAX_ELEMENTS_INDICES]                 = {  1, glSizeiv   },
+  [gl.MAX_ELEMENTS_VERTICES]                = {  1, glSizeiv   },
+  [gl.MAX_FRAGMENT_UNIFORM_COMPONENTS]      = {  1, glSizeiv   },
+  [gl.MAX_TEXTURE_IMAGE_UNITS]              = {  1, glSizeiv   },
+  [gl.MAX_TEXTURE_LOD_BIAS]                 = {  1, glSizeiv   },
+  [gl.MAX_TEXTURE_SIZE]                     = {  1, glSizeiv   },
+  [gl.MAX_VARYING_FLOATS]                   = {  1, glSizeiv   },
+  [gl.MAX_VERTEX_ATTRIBS]                   = {  1, glSizeiv   },
+  [gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS]       = {  1, glSizeiv   },
+  [gl.MAX_VERTEX_UNIFORM_COMPONENTS]        = {  1, glSizeiv   },
+  [gl.MAX_VIEWPORT_DIMS]                    = {  2, glSizeiv   },
+  [gl.NUM_COMPRESSED_TEXTURE_FORMATS]       = {  1, glUintv    },
+  [gl.PACK_ALIGNMENT]                       = {  1, glUintv    },
+  [gl.PACK_IMAGE_HEIGHT]                    = {  1, glUintv    },
+  [gl.PACK_LSB_FIRST]                       = {  1, glBooleanv },
+  [gl.PACK_ROW_LENGTH]                      = {  1, glUintv    },
+  [gl.PACK_SKIP_IMAGES]                     = {  1, glUintv    },
+  [gl.PACK_SKIP_PIXELS]                     = {  1, glUintv    },
+  [gl.PACK_SKIP_ROWS]                       = {  1, glUintv    },
+  [gl.PACK_SWAP_BYTES]                      = {  1, glBooleanv },
+  [gl.PIXEL_PACK_BUFFER_BINDING]            = {  1, glUintv    },
+  [gl.PIXEL_UNPACK_BUFFER_BINDING]          = {  1, glUintv    },
+  [gl.POINT_FADE_THRESHOLD_SIZE]            = {  1, glFloatv   },
+  [gl.POINT_SIZE]                           = {  1, glFloatv   },
+  [gl.POINT_SIZE_GRANULARITY]               = {  1, glFloatv   },
+  [gl.POINT_SIZE_RANGE]                     = {  1, glFloatv   },
+  [gl.POLYGON_OFFSET_FACTOR]                = {  1, glFloatv   },
+  [gl.POLYGON_OFFSET_UNITS]                 = {  1, glFloatv   },
+  [gl.POLYGON_OFFSET_FILL]                  = {  1, glBooleanv },
+  [gl.POLYGON_OFFSET_LINE]                  = {  1, glBooleanv },
+  [gl.POLYGON_OFFSET_POINT]                 = {  1, glBooleanv },
+  [gl.POLYGON_SMOOTH]                       = {  1, glBooleanv },
+  [gl.POLYGON_SMOOTH_HINT]                  = {  1, glEnumv    },
+  [gl.READ_BUFFER]                          = {  1, glEnumv    },
+  [gl.SAMPLE_BUFFERS]                       = {  1, glSizeiv   },
+  [gl.SAMPLE_COVERAGE_VALUE]                = {  1, glFloatv   },
+  [gl.SAMPLE_COVERAGE_INVERT]               = {  1, glBooleanv },
+  [gl.SAMPLES]                              = {  1, glSizeiv   },
+  [gl.SCISSOR_BOX]                          = {  4, glUintv    },
+  [gl.SCISSOR_TEST]                         = {  1, glBooleanv },
+  [gl.SMOOTH_LINE_WIDTH_RANGE]              = {  2, glFloatv   },
+  [gl.SMOOTH_LINE_WIDTH_GRANULARITY]        = {  1, glFloatv   },
+  [gl.SMOOTH_POINT_SIZE_RANGE]              = {  2, glFloatv   },
+  [gl.SMOOTH_POINT_SIZE_GRANULARITY]        = {  1, glFloatv   },
+  [gl.STENCIL_BACK_FAIL]                    = {  1, glEnumv    },
+  [gl.STENCIL_BACK_FUNC]                    = {  1, glEnumv    },
+  [gl.STENCIL_BACK_PASS_DEPTH_FAIL]         = {  1, glEnumv    },
+  [gl.STENCIL_BACK_PASS_DEPTH_PASS]         = {  1, glEnumv    },
+  [gl.STENCIL_BACK_REF]                     = {  1, glIntv     },
+  [gl.STENCIL_BACK_VALUE_MASK]              = {  1, glUintv    },
+  [gl.STENCIL_BACK_WRITEMASK]               = {  1, glUintv    },
+  [gl.STENCIL_CLEAR_VALUE]                  = {  1, glIntv     },
+  [gl.STENCIL_FAIL]                         = {  1, glEnumv    },
+  [gl.STENCIL_FUNC]                         = {  1, glEnumv    },
+  [gl.STENCIL_PASS_DEPTH_FAIL]              = {  1, glEnumv    },
+  [gl.STENCIL_PASS_DEPTH_PASS]              = {  1, glEnumv    },
+  [gl.STENCIL_REF]                          = {  1, glIntv     },
+  [gl.STENCIL_TEST]                         = {  1, glBooleanv },
+  [gl.STENCIL_VALUE_MASK]                   = {  1, glUintv    },
+  [gl.STENCIL_WRITEMASK]                    = {  1, glUintv    },
+  [gl.STEREO]                               = {  1, glBooleanv },
+  [gl.SUBPIXEL_BITS]                        = {  1, glSizeiv   },
+  [gl.TEXTURE_1D]                           = {  1, glBooleanv },
+  [gl.TEXTURE_BINDING_1D]                   = {  1, glUintv    },
+  [gl.TEXTURE_2D]                           = {  1, glBooleanv },
+  [gl.TEXTURE_BINDING_2D]                   = {  1, glUintv    },
+  [gl.TEXTURE_3D]                           = {  1, glBooleanv },
+  [gl.TEXTURE_BINDING_3D]                   = {  1, glUintv    },
+  [gl.TEXTURE_BINDING_CUBE_MAP]             = {  1, glUintv    },
+  [gl.TEXTURE_COMPRESSION_HINT]             = {  1, glEnumv    },
+  [gl.TEXTURE_CUBE_MAP]                     = {  1, glBooleanv },
+  [gl.UNPACK_ALIGNMENT]                     = {  1, glUintv    },
+  [gl.UNPACK_IMAGE_HEIGHT]                  = {  1, glUintv    },
+  [gl.UNPACK_LSB_FIRST]                     = {  1, glUintv    },
+  [gl.UNPACK_ROW_LENGTH]                    = {  1, glUintv    },
+  [gl.UNPACK_SKIP_IMAGES]                   = {  1, glUintv    },
+  [gl.UNPACK_SKIP_PIXELS]                   = {  1, glUintv    },
+  [gl.UNPACK_SKIP_ROWS]                     = {  1, glUintv    },
+  [gl.UNPACK_SWAP_BYTES]                    = {  1, glBooleanv },
+  [gl.VIEWPORT]                             = {  4, glUintv    }
 }
 local glGetTypeMap = {
-  [glFloatv]   = g.glGetFloatv,
-  [glIntv]     = g.glGetIntegerv,
-  [glUintv]    = g.glGetIntegerv,
-  [glSizeiv]   = g.glGetIntegerv,
-  [glBooleanv] = g.glGetBooleanv,
-  [glEnumv]    = g.glGetIntegerv,
-  [glClampfv]  = g.glGetFloatv,
-  [glClampdv]  = g.glGetDoublev
+  [glFloatv]   = gl.GetFloatv,
+  [glIntv]     = gl.GetIntegerv,
+  [glUintv]    = gl.GetIntegerv,
+  [glSizeiv]   = gl.GetIntegerv,
+  [glBooleanv] = gl.GetBooleanv,
+  [glEnumv]    = gl.GetIntegerv,
+  [glClampfv]  = gl.GetFloatv,
+  [glClampdv]  = gl.GetDoublev
 }
-M.Get = function(what)
+function gl.Get(what)
   local class = glGetMap[what]
   if class == nil then
     return nil
@@ -186,156 +207,197 @@ M.Get = function(what)
   glGetTypeMap[class[2]](what, m)
   if class[1] == 1 then
     if ffi.istype(class[2], glBooleanv) then
-      return m[0] == g.GL_TRUE
+      return m[0] == gl.TRUE
     end
     return m[0]
   end
   return m
 end
+function gl.GetString(what)
+  return ffi.string(lib.glGetString(what)) -- make it return regular string
+end
+
+-- SHADERS -------------------------------------------------------------------
+
 local glGetShaderMap = {
-  [g.GL_SHADER_TYPE]          = {  1, false },
-  [g.GL_DELETE_STATUS]        = {  1, true  },
-  [g.GL_COMPILE_STATUS]       = {  1, true  },
-  [g.GL_INFO_LOG_LENGTH]      = {  1, false },
-  [g.GL_SHADER_SOURCE_LENGTH] = {  1, false },
+  [gl.SHADER_TYPE]          = {  1, false },
+  [gl.DELETE_STATUS]        = {  1, true  },
+  [gl.COMPILE_STATUS]       = {  1, true  },
+  [gl.INFO_LOG_LENGTH]      = {  1, false },
+  [gl.SHADER_SOURCE_LENGTH] = {  1, false },
 }
-function M.GetShader(shader, what)
+function gl.GetShader(shader, what)
   local class = glGetShaderMap[what]
   if class == nil then
     return nil
   end
   local m = glIntv(class[1])
-  g.glGetShaderiv(shader, what, m)
+  gl.GetShaderiv(shader, what, m)
   if class[1] == 1 then
     if class[2] then
-      return m[0] == g.GL_TRUE
+      return m[0] == gl.TRUE
     end
     return m[0]
   end
   return m
 end
-function M.GetShaderInfoLog(shader)
-  local logSize  = M.GetShader(shader, g.GL_INFO_LOG_LENGTH)
+function gl.GetShaderInfoLog(shader)
+  local logSize  = gl.GetShader(shader, gl.INFO_LOG_LENGTH)
   local logSizep = glSizeiv(1)
-  if logSize == nil or logSize <= 0 then
-    return nil
-  end
+  if logSize == nil or logSize <= 0 then return "" end
   local log = glCharv(logSize+1)
-  g.glGetShaderInfoLog(shader, logSize+1, logSizep, log)
+  lib.glGetShaderInfoLog(shader, logSize+1, logSizep, log)
   return ffi.string(log)
 end
-function M.ShaderSource(shader, source)
+function gl.ShaderSource(shader, source)
   local sourcep = glCharv(#source + 1)
   ffi.copy(sourcep, source)
   local sourcepp = glConstCharpp(sourcep)
-  g.glShaderSource(shader, 1, sourcepp, NULL)
+  lib.glShaderSource(shader, 1, sourcepp, NULL)
 end
 local glGetProgramMap = {
-  [g.GL_DELETE_STATUS]               = {  1, true  },
-  [g.GL_LINK_STATUS]                 = {  1, true  },
-  [g.GL_VALIDATE_STATUS]             = {  1, true  },
-  [g.GL_INFO_LOG_LENGTH]             = {  1, false },
-  [g.GL_ATTACHED_SHADERS]            = {  1, false },
-  [g.GL_ACTIVE_ATTRIBUTES]           = {  1, false },
-  [g.GL_ACTIVE_ATTRIBUTE_MAX_LENGTH] = {  1, false },
-  [g.GL_ACTIVE_UNIFORMS]             = {  1, false },
-  [g.GL_ACTIVE_UNIFORMS]             = {  1, false },
+  [gl.DELETE_STATUS]               = {  1, true  },
+  [gl.LINK_STATUS]                 = {  1, true  },
+  [gl.VALIDATE_STATUS]             = {  1, true  },
+  [gl.INFO_LOG_LENGTH]             = {  1, false },
+  [gl.ATTACHED_SHADERS]            = {  1, false },
+  [gl.ACTIVE_ATTRIBUTES]           = {  1, false },
+  [gl.ACTIVE_ATTRIBUTE_MAX_LENGTH] = {  1, false },
+  [gl.ACTIVE_UNIFORMS]             = {  1, false },
+  [gl.ACTIVE_UNIFORMS]             = {  1, false },
 }
-function M.GetProgram(program, what)
+function gl.GetProgram(program, what)
   local class = glGetProgramMap[what]
   if class == nil then
     return nil
   end
   local m = glIntv(class[1])
-  g.glGetProgramiv(program, what, m)
+  gl.GetProgramiv(program, what, m)
   if class[1] == 1 then
     if class[2] then
-      return m[0] == g.GL_TRUE
+      return m[0] == gl.TRUE
     end
     return m[0]
   end
   return m
 end
-function M.GetProgramInfoLog(program)
-  local logSize  = M.GetProgram(program, g.GL_INFO_LOG_LENGTH)
+function gl.GetProgramInfoLog(program)
+  local logSize  = gl.GetProgram(program, gl.INFO_LOG_LENGTH)
   local logSizep = glSizeiv(1)
   if logSize == nil or logSize <= 0 then
     return nil
   end
   local log = glCharv(logSize+1)
-  g.glGetProgramInfoLog(program, logSize+1, logSizep, log)
+  gl.GetProgramInfoLog(program, logSize+1, logSizep, log)
   return ffi.string(constCharp)
 end
-
--- make glGetString return regular string
-M.GetString = function(what)
-  return ffi.string(g.glGetString(what))
+function gl.Program(shaderPaths)
+  local program = gl.CreateProgram()
+  for type, path in pairs(shaderPaths) do
+    local f = assert(io.open(path, 'rb'))
+    local source = f:read('*all')
+    local shader = gl.CreateShader(type)
+    f:close()
+    gl.ShaderSource(shader, source)
+    gl.CompileShader(shader)
+    if not gl.GetShader(shader, gl.COMPILE_STATUS) then
+      error(path.."\n"..gl.GetShaderInfoLog(shader))
+    end
+    gl.AttachShader(program, shader)
+  end
+  gl.LinkProgram(program)
+  if not gl.GetProgram(program, gl.LINK_STATUS) then
+    error(gl.GetProgramInfoLog(program))
+  end
+  return program
 end
 
--- textures simplification
-M.GenTextures = function(num, out)
+-- TEXTURES ------------------------------------------------------------------
+
+function gl.GenTextures(num, out)
   num = num or 1
   out = out or glUintv(num)
-  g.glGenTextures(num, out)
+  lib.glGenTextures(num, out)
   return out
 end
-M.GenTexture = function()
-  return M.GenTextures(1)[0]
+function gl.GenTexture()
+  return gl.GenTextures(1)[0]
 end
-M.DeleteTexture = function(...)
-  return M.DeleteTextures(select('#', ...), glUintv(select('#', ...), ...))
+function gl.DeleteTexture(...)
+  return gl.DeleteTextures(select('#', ...), glUintv(select('#', ...), ...))
+end
+local glTextureStorageMap = {
+  [1] = gl.ALPHA,
+  [3] = gl.RGB,
+  [4] = gl.RGBA
+}
+function gl.Textures(texturePaths)
+  local textures = gl.GenTextures(#texturePaths)
+  for target, path in pairs(texturePaths) do
+    local texture = textures[target] -- zero indexed
+    local data, width, height, channels = imglib.bitmap(path)
+    if data then
+      local storage = glTextureStorageMap[channels]
+      gl.ActiveTexture(gl.TEXTURE0 + target)
+      gl.BindTexture(gl.TEXTURE_2D, texture)
+      gl.uBuild2DMipmaps(gl.TEXTURE_2D,    -- texture to specify
+                          storage,            -- internal texture storage format
+                          width,              -- texture width
+                          height,             -- texture height
+                          storage,            -- pixel format
+                          gl.UNSIGNED_BYTE, -- color component format
+                          data)               -- pointer to texture image
+      data = nil
+      gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+      gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    end
+  end
+  return textures
 end
 
--- bufs simplification
-M.GenBuffers = function(num, out)
+-- BUFFERS -------------------------------------------------------------------
+
+function gl.GenBuffers(num, out)
   num = num or 1
   out = out or glUintv(num)
-  g.glGenBuffers(num, out)
+  lib.glGenBuffers(num, out)
   return out
 end
-M.GenBuffer = function()
-  return M.GenBuffers(1)[0]
+function gl.GenBuffer()
+  return gl.GenBuffers(1)[0]
 end
-M.DeleteBuffer = function(...)
-  return M.DeleteBuffers(select('#', ...), glUintv(select('#', ...), ...))
+function gl.DeleteBuffer(...)
+  return gl.DeleteBuffers(select('#', ...), glUintv(select('#', ...), ...))
 end
 
--- vertex array simplification
-M.GenVertexArrays = function(num, out)
+-- ARRAYS --------------------------------------------------------------------
+
+function gl.GenVertexArrays(num, out)
   num = num or 1
   out = out or glUintv(num)
-  g.glGenVertexArrays(num, out)
+  lib.glGenVertexArrays(num, out)
   return out
 end
-M.GenVertexArray = function()
-  return M.GenVertexArrays(1)[0]
+function gl.GenVertexArray()
+  return gl.GenVertexArrays(1)[0]
 end
-M.DeleteVertexArray = function(...)
-  return M.DeleteVertexArrays(select('#', ...), glUintv(select('#', ...), ...))
+function gl.DeleteVertexArray(...)
+  return gl.DeleteVertexArrays(select('#', ...), glUintv(select('#', ...), ...))
 end
-
--- light vaarg functions
-M.Material = function(face, type, ...)
-  return g.glMaterialfv(face, type, glFloatv(select('#', ...), ...))
-end
-M.Light = function(face, type, ...)
-  return g.glLightfv(face, type, glFloatv(select('#', ...), ...))
-end
-
-M.Array = function(program, data, ...)
-  local array = M.GenVertexArray()
-  g.glBindVertexArray(array)
-  local buf = M.GenBuffer()
+function gl.Array(program, data, ...)
+  local array = gl.GenVertexArray()
+  gl.BindVertexArray(array)
+  local buf = gl.GenBuffer()
   local dataSize = ffi.sizeof(glFloatv, #data)
   local data = glFloatv(#data, data)
-  g.glBindBuffer(g.GL_ARRAY_BUFFER, buf)
-  g.glBufferData(g.GL_ARRAY_BUFFER, dataSize, data, g.GL_STATIC_DRAW)
+  gl.BindBuffer(gl.ARRAY_BUFFER, buf)
+  gl.BufferData(gl.ARRAY_BUFFER, dataSize, data, gl.STATIC_DRAW)
   local attr = {}
   local vertexSize = 0
   for i = 1, select('#', ...), 2 do
     local location = select(i, ...)
     local size     = select(i+1, ...) or 3
-    if type(location) == 'string' then location = g.glGetAttribLocation(program, location) end
+    if type(location) == 'string' then location = gl.GetAttribLocation(program, location) end
     attr[#attr+1] = { location = location, size = size }
     vertexSize = vertexSize + size
   end
@@ -346,28 +408,27 @@ M.Array = function(program, data, ...)
   vertexSize = ffi.sizeof(glFloatv, vertexSize)
   local totalSize = 0
   for i = 1, #attr do
-    g.glVertexAttribPointer(attr[i].location, attr[i].size, g.GL_FLOAT, g.GL_FALSE, vertexSize, glFloatp(nil)+totalSize)
-    g.glEnableVertexAttribArray(attr[i].location)
+    gl.VertexAttribPointer(attr[i].location, attr[i].size, gl.FLOAT, gl.FALSE, vertexSize, glFloatp(nil)+totalSize)
+    gl.EnableVertexAttribArray(attr[i].location)
     totalSize = totalSize + attr[i].size
   end
   return array
 end
 
-M.plane = {
-  -- vertex  -- normal -- tex coord
-  -1, -1, 0,   0,  0,  1,   1, 1,
-   1, -1, 0,   0,  0,  1,   0, 1,
-   1,  1, 0,   0,  0,  1,   0, 0,
-   1,  1, 0,   0,  0,  1,   0, 0, -- dup
-  -1,  1, 0,   0,  0,  1,   1, 0,
-  -1, -1, 0,   0,  0,  1,   1, 1, -- dup
-}
--- renders solid cube with proper texture & normal map coords
-function M.PlaneArray(program)
-  return M.Array(program, M.plane, 'position', 3, 'normal', 3, 'texCoord', 2)
-end
+-- MODELS --------------------------------------------------------------------
 
-M.cube = {
+function gl.PlaneArray(program) return gl.Array(program, gl.plane, 'position', 3, 'normal', 3, 'texCoord', 2) end
+function gl.CubeArray(program)  return gl.Array(program, gl.cube,  'position', 3, 'normal', 3, 'texCoord', 2) end
+gl.plane = {
+  -- vertex  -- normal -- tex coord
+  -1, -1,  0,   0,  0,  1,   1, 1,
+   1, -1,  0,   0,  0,  1,   0, 1,
+   1,  1,  0,   0,  0,  1,   0, 0,
+   1,  1,  0,   0,  0,  1,   0, 0, -- dup
+  -1,  1,  0,   0,  0,  1,   1, 0,
+  -1, -1,  0,   0,  0,  1,   1, 1, -- dup
+}
+gl.cube = {
   -- position,  normal,      tex coord
   -- front
   -1, -1,  1,   0,  0,  1,   1, 1,
@@ -412,25 +473,5 @@ M.cube = {
    1,  1,  1,   1,  0,  0,   1, 0,
    1, -1,  1,   1,  0,  0,   1, 1  -- dup
 }
--- renders solid cube with proper texture & normal map coords
-function M.CubeArray(program)
-  return M.Array(program, M.cube, 'position', 3, 'normal', 3, 'texCoord', 2)
-end
 
--- index metamethod removing gl prefix for funtions
--- and GL_ prefix for constants
-setmetatable(M, { __index = function(t, n)
-  local s
-  -- all functions contain at least one small letter
-  if n:find('[a-z]') then
-    s = g['gl'..n]
-  elseif n:find('^UT?_') then
-    s = g['GL'..n]
-  else
-    s = g['GL_'..n]
-  end
-  rawset(t, n, s)
-  return s
-end })
-
-return M
+return gl
