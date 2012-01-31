@@ -57,10 +57,10 @@ local buttons = {}
 gl.ClearColor(.2, .2, .2, 0)
 gl.Enable(gl.CULL_FACE)
 
--- enable depth test & lighting
+-- enable depth test
 gl.Enable(gl.DEPTH_TEST)
 
--- set up texture
+-- set up textures
 local textures = gl.Textures(textures)
 
 -- load shaders
