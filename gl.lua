@@ -7,8 +7,7 @@ local gl  = require 'matrix' -- inherit matrix operators
 
 -- load image library, use CoreGraphics on Mac
 -- and libpng on other platforms
-local ok, imglib = pcall(require, 'mac.CoreGraphics')
-if not ok then imglib = require 'lib.png' end
+local imglib = require(ffi.os == 'OSX' and 'mac.CoreGraphics' or 'lib.png')
 
 -- index metamethod removing gl prefix for funtions
 -- and GL_ prefix for constants
@@ -335,7 +334,7 @@ function gl.Textures(texturePaths)
   local textures = gl.GenTextures(#texturePaths)
   for target, path in pairs(texturePaths) do
     local texture = textures[target] -- zero indexed
-    local data, width, height, channels = imglib.bitmap(path)
+    local data, width, height, channels = imglib.Bitmap(path)
     if data then
       local storage = glTextureStorageMap[channels]
       gl.ActiveTexture(gl.TEXTURE0 + target)

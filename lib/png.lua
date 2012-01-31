@@ -72,9 +72,21 @@ enum {
 };
 ]]
 
-local M = {}
-
-local png = ffi.load('png')
+-- setup library & remove png_ or PNG_ prefix
+local lib = ffi.load(ffi.os == 'OSX' and '/opt/local/lib/libpng.dylib' or 'png')
+local png = {}
+setmetatable(png, {
+  __index = function(t, n)
+    local s
+    if n:find('^[a-z]') then
+      s = lib['png_'..n]
+    else
+      s = lib['PNG_'..n]
+    end
+    rawset(t, n, s)
+    return s
+  end
+})
 
 local png_structpp = ffi.typeof('png_structp[1]')
 local png_infopp   = ffi.typeof('png_infop[1]')
@@ -82,81 +94,81 @@ local png_doublep  = ffi.typeof('double[?]')
 local png_rowp     = ffi.typeof('uint8_t[?]')
 local png_rowpp    = ffi.typeof('uint8_t *[?]')
 
-function M.bitmap(path)
-  local intver = png.png_access_version_number()
+function png.Bitmap(path)
+  local intver = png.access_version_number()
   local ver_major = math.floor(intver / 10000)
   local ver_minor = math.floor(intver % 10000 / 100)
   local ver_patch = math.floor(intver % 100)
   local version = ver_major..'.'..ver_minor..'.'..ver_patch
 
-  local ptr = png.png_create_read_struct(version, nil, nil, nil)
-  local info = png.png_create_info_struct(ptr)
-  local fp = png.fopen(path, 'rb')
+  local ptr = png.create_read_struct(version, nil, nil, nil)
+  local info = png.create_info_struct(ptr)
+  local fp = lib.fopen(path, 'rb')
 
   if fp == nil then
     return nil
   end
 
-  png.png_init_io(ptr, fp)
-  png.png_read_info(ptr, info)
+  png.init_io(ptr, fp)
+  png.read_info(ptr, info)
 
-  local color_type = png.png_get_color_type(ptr, info)
-  local bit_depth  = png.png_get_bit_depth(ptr, info)
-  local valid_tRNS = png.png_get_valid(ptr, info, png.PNG_INFO_tRNS)
-  local valid_gAMA = png.png_get_valid(ptr, info, png.PNG_INFO_gAMA)
+  local color_type = png.get_color_type(ptr, info)
+  local bit_depth  = png.get_bit_depth(ptr, info)
+  local valid_tRNS = png.get_valid(ptr, info, png.INFO_tRNS)
+  local valid_gAMA = png.get_valid(ptr, info, png.INFO_gAMA)
 
-  if color_type == png.PNG_COLOR_TYPE_PALETTE or
-     color_type == png.PNG_COLOR_TYPE_GRAY and bit_depth < 8 or
+  if color_type == png.COLOR_TYPE_PALETTE or
+     color_type == png.COLOR_TYPE_GRAY and bit_depth < 8 or
      valid_tRNS ~= 0 then
-    png.png_set_expand(ptr)
+    png.set_expand(ptr)
   end
 
   local screen_gamma = 2.0
 
   if valid_gAMA ~= 0 then
     local gamap = png_doublep()
-    png.png_get_gAMA(ptr, info, gamap)
-    png.png_set_gamma(ptr, screen_gamma, gamap[0]);
+    png.get_gAMA(ptr, info, gamap)
+    png.set_gamma(ptr, screen_gamma, gamap[0]);
   else
-    png.png_set_gamma(ptr, screen_gamma, 0.45);
+    png.set_gamma(ptr, screen_gamma, 0.45);
   end
 
-  if bit_depth == 16 then png.png_set_strip_16(ptr) end
-  if bit_depth  <  8 then png.png_set_packing(ptr) end
+  if bit_depth == 16 then png.set_strip_16(ptr) end
+  if bit_depth  <  8 then png.set_packing(ptr) end
 
-  png.png_read_update_info(ptr, info)
+  png.read_update_info(ptr, info)
 
-  color_type = png.png_get_color_type(ptr, info)
-  bit_depth  = png.png_get_bit_depth(ptr, info)
+  color_type = png.get_color_type(ptr, info)
+  bit_depth  = png.get_bit_depth(ptr, info)
 
-  local channels = png.png_get_channels(ptr, info)
+  local channels = png.get_channels(ptr, info)
 
   if channels ~= 1 and channels ~= 3 and channels ~=4 then
-    png.png_destroy_read_struct(png_structpp(ptr), png_infopp(info), nil)
-    png.fclose(fp)
+    png.destroy_read_struct(png_structpp(ptr), png_infopp(info), nil)
+    lib.fclose(fp)
     error(string.format('found %d channels, but only 1, 3 or 4 supported', channels))
     return nil
   end
 
   if bit_depth ~= 8 then
-    png.png_destroy_read_struct(png_structpp(ptr), png_infopp(info), nil)
-    png.fclose(fp)
+    png.destroy_read_struct(png_structpp(ptr), png_infopp(info), nil)
+    lib.fclose(fp)
     error(string.format('found %d BPP, but only 8 supported', bit_depth))
     return nil
   end
 
-  if color_type ~= png.PNG_COLOR_TYPE_RGB and
-     color_type ~= png.PNG_COLOR_TYPE_GRAY and
-     color_type ~= png.PNG_COLOR_TYPE_RGB_ALPHA then
-    png.png_destroy_read_struct(png_structpp(ptr), png_infopp(info), nil)
-    png.fclose(fp)
+  if color_type ~= png.COLOR_TYPE_RGB and
+     color_type ~= png.COLOR_TYPE_GRAY and
+     color_type ~= png.COLOR_TYPE_RGB_ALPHA then
+    png.destroy_read_struct(png_structpp(ptr), png_infopp(info), nil)
+    lib.fclose(fp)
     error(string.format('found %d color type, but only gray, RGB and RGBA are supported', color_type))
     return nil
   end
 
-  local width  = png.png_get_image_width(ptr, info)
-  local height = png.png_get_image_height(ptr, info)
-  local rowbytes = png.png_get_rowbytes(ptr, info)
+  local width  = png.get_image_width(ptr, info)
+  local height = png.get_image_height(ptr, info)
+  local rowbytes = png.get_rowbytes(ptr, info)
   local rows   = png_rowpp(height)
   local bitmap = png_rowp(height * rowbytes)
 
@@ -164,13 +176,11 @@ function M.bitmap(path)
     rows[row] = bitmap + row * rowbytes
   end
 
-  png.png_read_image(ptr, rows)
-  png.png_destroy_read_struct(png_structpp(ptr), png_infopp(info), nil)
-  png.fclose(fp)
+  png.read_image(ptr, rows)
+  png.destroy_read_struct(png_structpp(ptr), png_infopp(info), nil)
+  lib.fclose(fp)
 
   return bitmap, width, height, channels 
 end
 
-setmetatable(M, { __index = png })
-
-return M
+return png

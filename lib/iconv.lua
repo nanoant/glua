@@ -31,11 +31,11 @@ int iconv_close (iconv_t /*cd*/);
 ]]
 
 -- setup library & remove FT_ prefix
-local iconvlib = ffi.load 'iconv'
+local lib   = ffi.load 'iconv'
 local iconv = {}
 setmetatable(iconv, {
   __index = function(t, n)
-    local s = iconvlib['iconv_'..n]
+    local s = lib['iconv_'..n]
     rawset(t, n, s)
     return s
   end
@@ -64,7 +64,7 @@ function iconv.iconv(ic, str, uint16)
     outbufptr     = charptr(outbuf)
   end
 
-  iconvlib.iconv(ic, inbufptr, insize, outbufptr, outsize)
+  lib.iconv(ic, inbufptr, insize, outbufptr, outsize)
   local outlen = 2*len - outsize[0]
   if uint16 then
     return outbuf, tonumber(outlen / 2)
