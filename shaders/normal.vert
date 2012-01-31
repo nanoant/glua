@@ -3,6 +3,7 @@
 uniform int numLights;
 
 uniform mat4 projectionMatrix;
+uniform mat4 lightMatrix;
 uniform mat4 modelViewMatrix;
 uniform mat4 modelViewProjectionMatrix;
 uniform mat3 normalMatrix;
@@ -35,7 +36,7 @@ vec3 tangent()
 void main()
 {
 	fragTexCoord = texCoord;
-	gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);
+	gl_Position = modelViewProjectionMatrix * vec4(position, 1);
 
 	// http://www.ozone3d.net/tutorials/bump_mapping_p4.php
 	vec3 n = normalMatrix * normal;
@@ -46,7 +47,7 @@ void main()
 	vec3 tmp;
 
 	for(int i = 0; i < numLights; i++) {
-		tmp = lightPosition[i] - vertex;
+		tmp = (lightMatrix * vec4(lightPosition[i], 1)).xyz - vertex;
 		lightDirection[i] = vec3(
 			dot(tmp, t),
 			dot(tmp, b),

@@ -26,27 +26,28 @@ local shaderPaths = {
 
 local lights = {
   {
-    position = {  0,  0,  .8, 1  },
-    ambient  = {  0,  0,  0,  1  },
-    diffuse  = {  1,  1,  1,  1  },
-    specular = {  1,  1,  1,  1  }
+    position = {  1,  0,  1  },
+    ambient  = {  0,  0,  0  },
+    diffuse  = {  1,  0,  0  },
+    specular = {  1,  1,  1  }
   },
   {
-    position = { -1,  1, -1,  1  },
-    ambient  = {  0,  0,  0,  1  },
-    diffuse  = {  .8, .8, 1,  1  },
-    specular = {  .8, .8, 1,  1  }
-  },
-  {
-    position = {  1,  0, -1,  1  },
-    ambient  = {  0,  0,  0,  1  },
-    diffuse  = {  1,  .2, .2, 1  },
-    specular = {  1,  .2, .2, 1  }
+    position = { -1,  0,  1  },
+    ambient  = {  0,  0,  0  },
+    diffuse  = {  0,  0,  1  },
+    -- specular = {  .5, .5, 1  }
+    specular = {  0, 0, 1  }
   }
+  -- {
+  --   position = {  1,  0, -1  },
+  --   ambient  = {  0,  0,  0  },
+  --   diffuse  = {  1,  .2, .2 },
+  --   specular = {  1,  .2, .2 }
+  -- }
 }
 
 -- initialize display (note: glut module calls glutInit)
-gl.utInitDisplayString('rgba double')
+gl.utInitDisplayString('rgba double samples~8')
 gl.utInitWindowSize(500, 500)
 gl.utInitWindowPosition(100, 100)
 
@@ -122,9 +123,10 @@ local materialDiffuse   = gl.GetUniformLocation(program, 'materialDiffuse')
 local materialSpecular  = gl.GetUniformLocation(program, 'materialSpecular')
 local materialShininess = gl.GetUniformLocation(program, 'materialShininess')
 local projectionMatrix  = gl.GetUniformLocation(program, 'projectionMatrix')
+local lightMatrix       = gl.GetUniformLocation(program, 'lightMatrix')
 local modelViewMatrix   = gl.GetUniformLocation(program, 'modelViewMatrix')
-local normalMatrix      = gl.GetUniformLocation(program, 'normalMatrix')
 local mvpMatrix         = gl.GetUniformLocation(program, 'modelViewProjectionMatrix')
+local normalMatrix      = gl.GetUniformLocation(program, 'normalMatrix')
 local lightPosition     = gl.GetUniformLocation(program, 'lightPosition')
 local lightAmbient      = gl.GetUniformLocation(program, 'lightAmbient')
 local lightDiffuse      = gl.GetUniformLocation(program, 'lightDiffuse')
@@ -159,11 +161,12 @@ gl.Uniform1f(materialShininess, .2)
 
 -- load solid cube buffer
 local cubeArray  = gl.CubeArray(program)
-local planeArray = gl.PlaneArray(program)
+-- local planeArray = gl.PlaneArray(program)
 
 local projection = gl.identity
 local view       = gl.Translate(0,0,-4)
 local model      = gl.identity
+local light      = gl.identity
 
 -- called upon window resize & creation
 gl.utReshapeFunc(function(w, h)
@@ -173,16 +176,9 @@ gl.utReshapeFunc(function(w, h)
 end)
 
 -- idle callbacks
-local lightsRotation = 0
-local lightsRotationAxis = { .3, 1, 0 }
 local rotateCallback = gl.utIdleCallback(function()
-  lightsRotation = lightsRotation + .1
-  gl.PushMatrix()
-  gl.Rotate(lightsRotation, unpack(lightsRotationAxis))
-  for l = 1, #lights do
-    if lights[l].position then gl.Light(gl.LIGHT0+l-1, gl.POSITION, unpack(lights[l].position)) end
-  end
-  gl.PopMatrix()
+  light = gl.Rotatey(.002) * light
+  gl.UniformMatrix4fv(lightMatrix, 1, gl.TRUE, light.gl)
   gl.utPostRedisplay()
 end)
 
@@ -212,10 +208,10 @@ end)
 -- main drawing function
 gl.utDisplayFunc(function()
   local modelView = view * model
-  gl.UniformMatrix4fv(projectionMatrix, 1, gl.FALSE, projection.t.gl)
-  gl.UniformMatrix4fv(modelViewMatrix,  1, gl.FALSE, modelView.t.gl)
-  gl.UniformMatrix4fv(mvpMatrix,        1, gl.FALSE, (projection*modelView).t.gl)
-  gl.UniformMatrix3fv(normalMatrix,     1, gl.FALSE, modelView.mat3.inv.t.gl)
+  gl.UniformMatrix4fv(projectionMatrix,  1, gl.TRUE,  projection.gl)
+  gl.UniformMatrix4fv(modelViewMatrix,   1, gl.TRUE,  modelView.gl)
+  gl.UniformMatrix4fv(mvpMatrix,         1, gl.TRUE,  (projection*modelView).gl)
+  gl.UniformMatrix3fv(normalMatrix,      1, gl.FALSE, modelView.mat3.inv.gl)
 
   gl.Clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT)
   gl.BindVertexArray(cubeArray)
