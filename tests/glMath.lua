@@ -10,6 +10,13 @@ local m3 = gl.mat3(2,1,0,
                    0,2,0,
                    0,0,2)
 
+local rot = gl.Rotate(.2,.3,.4)
+
+print(rot.t); print()
+print(rot.inv); print()
+
+print(gl.identity * gl.vec3(1,2,3)); print()
+
 print(m2.inv.inv); print()
 print(m3.inv.inv); print()
 
