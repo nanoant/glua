@@ -23,24 +23,23 @@ local colorShader = {
 }
 local lights = {
   {
-    position = {  1,  0,  1  },
+    position = {  1.3,  0,  1.3  },
     ambient  = {  0,  0,  0  },
     diffuse  = {  1,  0,  0  },
     specular = {  1,  1,  1  }
   },
   {
-    position = { -1,  0,  1  },
+    position = {  0,  0, -1.3  },
+    ambient  = {  0,  0,  0  },
+    diffuse  = {  1,  1,  0  },
+    specular = {  1,  1,  1  }
+  },
+  {
+    position = { -1.3,  0,  1.3  },
     ambient  = {  0,  0,  0  },
     diffuse  = {  0,  0,  1  },
-    -- specular = {  .5, .5, 1  }
-    specular = {  0, 0, 1  }
+    specular = {  0,  0,  1  }
   }
-  -- {
-  --   position = {  1,  0, -1  },
-  --   ambient  = {  0,  0,  0  },
-  --   diffuse  = {  1,  .2, .2 },
-  --   specular = {  1,  .2, .2 }
-  -- }
 }
 
 -- initialize display (note: glut module calls glutInit)
@@ -104,6 +103,8 @@ local view       = gl.Translate(0,0,-4)
 local model      = gl.identity
 local light      = gl.identity
 
+normalProgram.lightMatrix = light
+
 -- called upon window resize & creation
 gl.utReshapeFunc(function(w, h)
   width, height = w, h
@@ -147,7 +148,7 @@ gl.utDisplayFunc(function()
   normalProgram.projectionMatrix          = projection
   normalProgram.modelViewMatrix           = modelView
   normalProgram.modelViewProjectionMatrix = projection * modelView
-  normalProgram.normalMatrix              = modelView.mat3.inv.t
+  normalProgram.normalMatrix              = modelView.inv.t.mat3
 
   gl.Clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT)
   gl.BindVertexArray(cubeArray)

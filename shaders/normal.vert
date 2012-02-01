@@ -47,7 +47,7 @@ void main()
 	vec3 tmp;
 
 	for(int i = 0; i < numLights; i++) {
-		tmp = (lightMatrix * vec4(lightPosition[i], 1)).xyz - vertex;
+		tmp = vec3(modelViewMatrix * lightMatrix * vec4(lightPosition[i], 1)) - vertex;
 		lightDirection[i] = vec3(
 			dot(tmp, t),
 			dot(tmp, b),

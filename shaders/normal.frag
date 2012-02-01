@@ -23,9 +23,9 @@ out vec4 fragColor;
 void main()
 {
 	vec4 texColor   = texture(colorTex,  fragTexCoord);
-	vec3 texNormal  = texture(normalTex, fragTexCoord).xyz;
+	vec3 normal     = texture(normalTex, fragTexCoord).xyz;
 
-	vec3 nnormal    = normalize(texNormal * 2.0 - 1.0);
+	vec3 nnormal    = normalize(normal * 2.0 - 1.0);
 	vec3 neye       = normalize(eyeDirection);
 
 	vec3 lightColor = vec3(0, 0, 0);
