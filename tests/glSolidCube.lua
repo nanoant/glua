@@ -66,57 +66,39 @@ local textures = gl.Textures(textures)
 -- load shaders
 local normalProgram = gl.Program(normalShader)
 -- local colorProgram = gl.Program(colorShader)
-gl.UseProgram(normalProgram)
-
--- uniforms
-local numLights         = gl.GetUniformLocation(normalProgram, 'numLights')
-local colorTex          = gl.GetUniformLocation(normalProgram, 'colorTex')
-local normalTex         = gl.GetUniformLocation(normalProgram, 'normalTex')
-local materialAmbient   = gl.GetUniformLocation(normalProgram, 'materialAmbient')
-local materialDiffuse   = gl.GetUniformLocation(normalProgram, 'materialDiffuse')
-local materialSpecular  = gl.GetUniformLocation(normalProgram, 'materialSpecular')
-local materialShininess = gl.GetUniformLocation(normalProgram, 'materialShininess')
-local projectionMatrix  = gl.GetUniformLocation(normalProgram, 'projectionMatrix')
-local lightMatrix       = gl.GetUniformLocation(normalProgram, 'lightMatrix')
-local modelViewMatrix   = gl.GetUniformLocation(normalProgram, 'modelViewMatrix')
-local mvpMatrix         = gl.GetUniformLocation(normalProgram, 'modelViewProjectionMatrix')
-local normalMatrix      = gl.GetUniformLocation(normalProgram, 'normalMatrix')
-local lightPosition     = gl.GetUniformLocation(normalProgram, 'lightPosition')
-local lightAmbient      = gl.GetUniformLocation(normalProgram, 'lightAmbient')
-local lightDiffuse      = gl.GetUniformLocation(normalProgram, 'lightDiffuse')
-local lightSpecular     = gl.GetUniformLocation(normalProgram, 'lightSpecular')
+gl.UseProgram(normalProgram.gl)
 
 -- set up lights
-gl.Uniform1i(numLights, #lights)
-local lightPositionData = gl.vvec3(#lights)
-local lightAmbientData  = gl.vvec3(#lights)
-local lightDiffuseData  = gl.vvec3(#lights)
-local lightSpecularData = gl.vvec3(#lights)
+gl.Uniform1i(normalProgram.numLights, #lights)
+local lightPosition = gl.vvec3(#lights)
+local lightAmbient  = gl.vvec3(#lights)
+local lightDiffuse  = gl.vvec3(#lights)
+local lightSpecular = gl.vvec3(#lights)
 for l = 1, #lights do
-  if lights[l].position then lightPositionData[l-1] = gl.vec3(unpack(lights[l].position)) end
-  if lights[l].ambient  then lightAmbientData[l-1]  = gl.vec3(unpack(lights[l].ambient))  end
-  if lights[l].diffuse  then lightDiffuseData[l-1]  = gl.vec3(unpack(lights[l].diffuse))  end
-  if lights[l].specular then lightSpecularData[l-1] = gl.vec3(unpack(lights[l].specular)) end
+  if lights[l].position then lightPosition[l-1] = gl.vec3(unpack(lights[l].position)) end
+  if lights[l].ambient  then lightAmbient[l-1]  = gl.vec3(unpack(lights[l].ambient))  end
+  if lights[l].diffuse  then lightDiffuse[l-1]  = gl.vec3(unpack(lights[l].diffuse))  end
+  if lights[l].specular then lightSpecular[l-1] = gl.vec3(unpack(lights[l].specular)) end
 end
-gl.Uniform3fv(lightPosition, #lights, lightPositionData[0].gl)
-gl.Uniform3fv(lightAmbient,  #lights, lightAmbientData[0].gl)
-gl.Uniform3fv(lightDiffuse,  #lights, lightDiffuseData[0].gl)
-gl.Uniform3fv(lightSpecular, #lights, lightSpecularData[0].gl)
+gl.Uniform3fv(normalProgram.lightPosition, #lights, lightPosition[0].gl)
+gl.Uniform3fv(normalProgram.lightAmbient,  #lights, lightAmbient[0].gl)
+gl.Uniform3fv(normalProgram.lightDiffuse,  #lights, lightDiffuse[0].gl)
+gl.Uniform3fv(normalProgram.lightSpecular, #lights, lightSpecular[0].gl)
 
 -- set up texture mapping
-gl.Uniform1i(colorTex,  0)
-gl.Uniform1i(normalTex, 1)
+gl.Uniform1i(normalProgram.colorTex,  0)
+gl.Uniform1i(normalProgram.normalTex, 1)
 
 -- set up material
-gl.Uniform3f(materialAmbient,   .1, .1, .1)
-gl.Uniform3f(materialDiffuse,   .5, .5, .5)
-gl.Uniform3f(materialSpecular,  1,  1,  1)
-gl.Uniform1f(materialShininess, .2)
+normalProgram.materialAmbient   = {.1, .1, .1}
+normalProgram.materialDiffuse   = {.5, .5, .5}
+normalProgram.materialSpecular  = {1,  1,  1 }
+normalProgram.materialShininess = .2
 
--- load solid cube buffer
+-- load solid cube
 local cubeArray  = gl.CubeArray(normalProgram)
--- local planeArray = gl.PlaneArray(normalProgram)
 
+-- setup matrices
 local projection = gl.identity
 local view       = gl.Translate(0,0,-4)
 local model      = gl.identity
@@ -132,7 +114,7 @@ end)
 -- idle callbacks
 local rotateCallback = gl.utIdleCallback(function()
   light = gl.Rotatey(.002) * light
-  gl.UniformMatrix4fv(lightMatrix, 1, gl.TRUE, light.gl)
+  normalProgram.lightMatrix = light
   gl.utPostRedisplay()
 end)
 
@@ -162,16 +144,14 @@ end)
 -- main drawing function
 gl.utDisplayFunc(function()
   local modelView = view * model
-  gl.UniformMatrix4fv(projectionMatrix,  1, gl.TRUE,  projection.gl)
-  gl.UniformMatrix4fv(modelViewMatrix,   1, gl.TRUE,  modelView.gl)
-  gl.UniformMatrix4fv(mvpMatrix,         1, gl.TRUE,  (projection*modelView).gl)
-  gl.UniformMatrix3fv(normalMatrix,      1, gl.FALSE, modelView.mat3.inv.gl)
+  normalProgram.projectionMatrix          = projection
+  normalProgram.modelViewMatrix           = modelView
+  normalProgram.modelViewProjectionMatrix = projection * modelView
+  normalProgram.normalMatrix              = modelView.mat3.inv.t
 
   gl.Clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT)
   gl.BindVertexArray(cubeArray)
   gl.DrawArrays(gl.TRIANGLES, 0, 36)
-  -- gl.BindVertexArray(planeArray)
-  -- gl.DrawArrays(gl.TRIANGLES, 0, 6)
   gl.utSwapBuffers()
 end)
 

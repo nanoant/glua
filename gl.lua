@@ -290,6 +290,33 @@ function gl.GetProgramInfoLog(program)
   gl.GetProgramInfoLog(program, logSize+1, logSizep, log)
   return ffi.string(constCharp)
 end
+local Program = {
+  __index = function(program, uniform)
+    local location = program.locations[uniform]
+    if location == nil then
+      location = gl.GetUniformLocation(program.gl, uniform)
+      program.locations[uniform] = location
+    end
+    return location
+  end,
+  __newindex = function(program, uniform, value)
+    local location = program[uniform]
+    if ffi.istype(gl.mat4, value) then
+      gl.UniformMatrix4fv(location,  1, gl.TRUE, value.gl)
+    elseif ffi.istype(gl.mat3, value) then
+      gl.UniformMatrix3fv(location,  1, gl.TRUE, value.gl)
+    elseif ffi.istype(gl.mat2, value) then
+      gl.UniformMatrix2fv(location,  1, gl.TRUE, value.gl)
+    elseif type(value) == 'table' then
+      gl['Uniform'..#value..'f'](location, unpack(value))
+    else
+      gl.Uniform1f(location, value)
+    end
+  end,
+  __gc = function(program)
+    gl.DeleteProgram(program.gl)
+  end
+}
 function gl.Program(shaderPaths)
   local program = gl.CreateProgram()
   for type, path in pairs(shaderPaths) do
@@ -308,7 +335,7 @@ function gl.Program(shaderPaths)
   if not gl.GetProgram(program, gl.LINK_STATUS) then
     error(gl.GetProgramInfoLog(program))
   end
-  return program
+  return setmetatable({ gl = program, locations = {} }, Program)
 end
 
 -- TEXTURES ------------------------------------------------------------------
@@ -385,6 +412,7 @@ function gl.DeleteVertexArray(...)
 end
 function gl.Array(program, data, ...)
   local array = gl.GenVertexArray()
+  if type(program) == 'table' then program = program.gl end
   gl.BindVertexArray(array)
   local buf = gl.GenBuffer()
   local dataSize = ffi.sizeof(glFloatv, #data)
