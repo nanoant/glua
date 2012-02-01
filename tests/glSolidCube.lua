@@ -49,7 +49,7 @@ gl.utInitWindowSize(500, 500)
 gl.utInitWindowPosition(100, 100)
 
 -- create window & local mouse state variables
-local window = gl.utCreateWindow("Teapot")
+local window = gl.utCreateWindow("Solid Cube")
 local width, height
 local buttons = {}
 
