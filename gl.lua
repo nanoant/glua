@@ -48,6 +48,25 @@ ffi.cdef [[
 function gl.utTimerCallback(f) return ffi.cast('glutTimerCallback', f) end
 function gl.utIdleCallback(f)  return ffi.cast('glutIdleCallback', f)  end
 
+-- INITIALIZATION ------------------------------------------------------------
+
+-- tries to use glutInitContextVersion(3, 2) from FreeGLUT and bails to
+-- profile=32 setting on Mac, via: https://github.com/nanoant/osxglut
+function gl.utCoreProfileDisplayString(string)
+  if pcall(function () return lib['glutInitContextVersion'] end ) then
+    gl.utInitContextVersion(3, 2)
+    gl.utInitContextProfile(gl.UT_CORE_PROFILE)
+    gl.utInitContextFlags(gl.UT_FORWARD_COMPATIBLE)
+  elseif ffi.os == 'OSX' then
+    string = string..' profile=32'
+  else
+    error 'Core profile not supported in regular GLUT, please install FreeGLUT.'
+  end
+  gl.utInitDisplayString(string)
+end
+
+-- GETTERS -------------------------------------------------------------------
+
 -- automatic vector generating get
 -- http://www.opengl.org/sdk/docs/man/xhtml/glGet.xml
 local glGetMap = {
@@ -366,14 +385,16 @@ function gl.Textures(texturePaths)
       local storage = glTextureStorageMap[channels]
       gl.ActiveTexture(gl.TEXTURE0 + target)
       gl.BindTexture(gl.TEXTURE_2D, texture)
-      gl.uBuild2DMipmaps(gl.TEXTURE_2D,    -- texture to specify
-                          storage,            -- internal texture storage format
-                          width,              -- texture width
-                          height,             -- texture height
-                          storage,            -- pixel format
-                          gl.UNSIGNED_BYTE, -- color component format
-                          data)               -- pointer to texture image
-      data = nil
+      gl.TexImage2D(gl.TEXTURE_2D,
+                    0,                  -- level
+                    storage,            -- internal texture storage format
+                    width,              -- texture width
+                    height,             -- texture height
+                    0,                  -- border
+                    storage,            -- pixel format
+                    gl.UNSIGNED_BYTE,   -- color component format
+                    data)               -- pointer to texture image
+      gl.GenerateMipmap(gl.TEXTURE_2D)
       gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
       gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
     end

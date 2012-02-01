@@ -43,7 +43,7 @@ local lights = {
 }
 
 -- initialize display (note: glut module calls glutInit)
-gl.utInitDisplayString('rgba double samples~8')
+gl.utCoreProfileDisplayString('rgba double samples~8')
 gl.utInitWindowSize(500, 500)
 gl.utInitWindowPosition(100, 100)
 

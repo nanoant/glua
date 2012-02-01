@@ -404,6 +404,26 @@ void glutGameModeString(const char *string);
 int glutEnterGameMode(void);
 void glutLeaveGameMode(void);
 int glutGameModeGet(GLenum mode);
+
+/* FreeGLUT extensions for core profile initialization */
+enum {
+/*
+ * Flags for glutInitContextFlags, see freeglut_init.c
+ */
+  GLUT_DEBUG                         = 0x0001,
+  GLUT_FORWARD_COMPATIBLE            = 0x0002,
+
+
+/*
+ * Flags for glutInitContextProfile, see freeglut_init.c
+ */
+  GLUT_CORE_PROFILE                   = 0x0001,
+  GLUT_COMPATIBILITY_PROFILE          = 0x0002,
+};
+
+void    glutInitContextVersion( int majorVersion, int minorVersion );
+void    glutInitContextFlags( int flags );
+void    glutInitContextProfile( int profile );
 ]]
 
 local glut = ffi.load(ffi.os == 'OSX' and 'GLUT.framework/GLUT' or 'glut')
