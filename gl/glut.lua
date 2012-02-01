@@ -425,7 +425,16 @@ void    glutInitContextFlags( int flags );
 void    glutInitContextProfile( int profile );
 ]]
 
-local glut = ffi.load(ffi.os == 'OSX' and 'GLUT.framework/GLUT' or 'glut')
+local glut
+if ffi.os == 'OSX' then
+  glut = ffi.load 'GLUT.framework/GLUT'
+elseif ffi.os == 'Linux' then -- fallback to glut.so.3 if glut.so is not found
+  local ok
+  ok, glut = pcall(ffi.load, 'glut')
+  if not ok then glut = ffi.load 'glut.so.3' end
+else -- just load glut library on other platforms
+  glut = ffi.load 'glut'
+end
 
 -- initialize GLUT
 local name = arg[0]
