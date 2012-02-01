@@ -10,7 +10,6 @@
 local ffi = require 'ffi'
 
 require 'gl.gl3'
-require 'gl.glu'
 
 ffi.cdef[[
 /* constants */
