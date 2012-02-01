@@ -23,7 +23,7 @@ local colorShader = {
 }
 local lights = {
   {
-    position = {  1.3,  0,  1.3  },
+    position = {  1.3, 1.3, 1.3  },
     ambient  = {  0,  0,  0  },
     diffuse  = {  1,  0,  0  },
     specular = {  1,  1,  1  }
@@ -35,7 +35,7 @@ local lights = {
     specular = {  1,  1,  1  }
   },
   {
-    position = { -1.3,  0,  1.3  },
+    position = { -1.3, 0,  1.3  },
     ambient  = {  0,  0,  0  },
     diffuse  = {  0,  0,  1  },
     specular = {  0,  0,  1  }
