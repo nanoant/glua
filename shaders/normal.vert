@@ -1,4 +1,5 @@
 #version 150 core
+#define MAX_LIGHTS 8
 
 uniform int numLights;
 
@@ -8,13 +9,13 @@ uniform mat4 modelViewMatrix;
 uniform mat4 modelViewProjectionMatrix;
 uniform mat3 normalMatrix;
 
-uniform vec3 lightPosition[gl_MaxLights];
+uniform vec3 lightPosition[MAX_LIGHTS];
 
 in vec3 position;
 in vec3 normal;
 in vec2 texCoord;
 
-out vec3 lightDirection[gl_MaxLights]; // light direction vector in tangent space
+out vec3 lightDirection[MAX_LIGHTS]; // light direction vector in tangent space
 out vec3 eyeDirection;                 // eye direction vector in tangent space
 out vec2 fragTexCoord;
 

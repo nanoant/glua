@@ -1,10 +1,11 @@
 #version 150 core
+#define MAX_LIGHTS 8
 
 uniform int numLights;
 
-uniform vec3 lightDiffuse[gl_MaxLights];
-uniform vec3 lightSpecular[gl_MaxLights];
-uniform vec3 lightAmbient[gl_MaxLights];
+uniform vec3 lightDiffuse[MAX_LIGHTS];
+uniform vec3 lightSpecular[MAX_LIGHTS];
+uniform vec3 lightAmbient[MAX_LIGHTS];
 
 uniform vec3  materialDiffuse;
 uniform vec3  materialSpecular;
@@ -14,8 +15,8 @@ uniform float materialShininess;
 uniform sampler2D colorTex;
 uniform sampler2D normalTex;
 
-in vec3 lightDirection[gl_MaxLights]; // light direction vector in tangent space
-in vec3 eyeDirection;                 // eye direction vector in tangent space
+in vec3 lightDirection[MAX_LIGHTS]; // light direction vector in tangent space
+in vec3 eyeDirection;               // eye direction vector in tangent space
 in vec2 fragTexCoord;
 
 out vec4 fragColor;
