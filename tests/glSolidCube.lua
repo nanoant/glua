@@ -109,7 +109,7 @@ normalProgram.materialSpecular  = {1,  1,  1 }
 normalProgram.materialShininess = .2
 
 -- load solid cube
-local cubeArray  = gl.CubeArray(normalProgram)
+local cubeArray, cubeSize = gl.CubeArray(normalProgram)
 
 -- setup matrices
 local projection = gl.identity
@@ -166,7 +166,7 @@ gl.utDisplayFunc(function()
 
   gl.Clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT)
   gl.BindVertexArray(cubeArray)
-  gl.DrawArrays(gl.TRIANGLES, 0, 36)
+  gl.DrawArrays(gl.TRIANGLES, 0, cubeSize)
   gl.utSwapBuffers()
 end)
 

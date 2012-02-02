@@ -491,11 +491,14 @@ function gl.Array(program, data, ...)
   local array = gl.GenVertexArray()
   if type(program) == 'table' then program = program.gl end
   gl.BindVertexArray(array)
-  local buf = gl.GenBuffer()
-  local dataSize = ffi.sizeof(glFloatv, #data)
-  local data = glFloatv(#data, data)
+  local buf  = gl.GenBuffer()
+  local size = ffi.sizeof(glFloatv, #data)
+  local ptr  = glFloatv(#data, data)
   gl.BindBuffer(gl.ARRAY_BUFFER, buf)
-  gl.BufferData(gl.ARRAY_BUFFER, dataSize, data, gl.STATIC_DRAW)
+  gl.BufferData(gl.ARRAY_BUFFER, size, ptr, gl.STATIC_DRAW)
+  return array, math.floor(#data / gl.LoadArray(program, glFloatp(nil), ...))
+end
+function gl.LoadArray(program, ptr, ...)
   local attr = {}
   local vertexSize = 0
   for i = 1, select('#', ...), 2 do
@@ -512,17 +515,23 @@ function gl.Array(program, data, ...)
   vertexSize = ffi.sizeof(glFloatv, vertexSize)
   local totalSize = 0
   for i = 1, #attr do
-    gl.VertexAttribPointer(attr[i].location, attr[i].size, gl.FLOAT, gl.FALSE, vertexSize, glFloatp(nil)+totalSize)
     gl.EnableVertexAttribArray(attr[i].location)
+    gl.VertexAttribPointer(attr[i].location, attr[i].size, gl.FLOAT, gl.FALSE, vertexSize, ptr+totalSize)
     totalSize = totalSize + attr[i].size
   end
-  return array
+  return totalSize
+end
+function gl.DrawArray(program, data, ...)
+  if type(program) == 'table' then program = program.gl end
+  gl.DrawArrays(gl.TRIANGLES, 0, math.floor(#data / gl.LoadArray(program, glFloatv(#data, data), ...)))
 end
 
 -- MODELS --------------------------------------------------------------------
 
-function gl.PlaneArray(program) return gl.Array(program, gl.plane, 'position', 3, 'normal', 3, 'texCoord', 2) end
-function gl.CubeArray(program)  return gl.Array(program, gl.cube,  'position', 3, 'normal', 3, 'texCoord', 2) end
+function gl.PlaneArray(program) return gl.Array    (program, gl.plane, 'position', 3, 'normal', 3, 'texCoord', 2) end
+function gl.CubeArray(program)  return gl.Array    (program, gl.cube,  'position', 3, 'normal', 3, 'texCoord', 2) end
+function gl.SolidPlane(program) return gl.DrawArray(program, gl.plane, 'position', 3, 'normal', 3, 'texCoord', 2) end
+function gl.SolidCube(program)  return gl.DrawArray(program, gl.cube,  'position', 3, 'normal', 3, 'texCoord', 2) end
 gl.plane = {
   -- vertex  -- normal -- tex coord
   -1, -1,  0,   0,  0,  1,   1, 1,
