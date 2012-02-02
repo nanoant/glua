@@ -2,9 +2,20 @@
 
 local gl = require('gl')
 
-gl.utInitContextVersion(3, 2)
-gl.utInitContextFlags(gl.UT_FORWARD_COMPATIBLE + gl.UT_DEBUG)
-gl.utInitContextProfile(gl.UT_CORE_PROFILE)
+local core = true
+for i = 1, #arg do
+  if     arg[i]:match('^--compat$') then core = false
+  elseif arg[i]:match('^--help$')   then
+    print [[
+    --help   Shows help
+    --compat Use compatibility profile]]
+  end
+end
+if core then
+  gl.utInitContextVersion(3, 2)
+  gl.utInitContextFlags(gl.UT_FORWARD_COMPATIBLE + gl.UT_DEBUG)
+  gl.utInitContextProfile(gl.UT_CORE_PROFILE)
+end
 gl.utInitDisplayString('rgba double depth>=16 samples~8')
 
 gl.utInitWindowSize(500, 500)
