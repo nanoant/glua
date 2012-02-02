@@ -30,7 +30,7 @@ setmetatable(gl, { __index = function(t, n)
       return function(...)
         local r = s(...)
         local e = lib.glGetError()
-        if e ~= 0 then error(glErrorMap[e] or e) end
+        if e ~= 0 then error(string.format('gl%s: GL_%s', n, glErrorMap[e] or e)) end
         return r
       end
     end
@@ -69,11 +69,11 @@ function gl.utIdleCallback(f)  return ffi.cast('glutIdleCallback', f)  end
 -- ERRORS --------------------------------------------------------------------
 
 glErrorMap = {
-  [gl.NO_ERROR]          = 'GL_NO_ERROR: No error has been recorded.',
-  [gl.INVALID_ENUM]      = 'GL_INVALID_ENUM: An unacceptable value is specified for an enumerated argument.',
-  [gl.INVALID_VALUE]     = 'GL_INVALID_VALUE: A numeric argument is out of range.',
-  [gl.INVALID_OPERATION] = 'GL_INVALID_OPERATION: The specified operation is not allowed in the current state.',
-  [gl.OUT_OF_MEMORY]     = 'GL_OUT_OF_MEMORY: There is not enough memory left to execute the command.',
+  [gl.NO_ERROR]          = 'NO_ERROR: No error has been recorded.',
+  [gl.INVALID_ENUM]      = 'INVALID_ENUM: An unacceptable value is specified for an enumerated argument.',
+  [gl.INVALID_VALUE]     = 'INVALID_VALUE: A numeric argument is out of range.',
+  [gl.INVALID_OPERATION] = 'INVALID_OPERATION: The specified operation is not allowed in the current state.',
+  [gl.OUT_OF_MEMORY]     = 'OUT_OF_MEMORY: There is not enough memory left to execute the command.',
 }
 
 -- FREEGLUT COMPATIBILITY FOR OSX --------------------------------------------
