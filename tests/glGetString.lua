@@ -2,6 +2,9 @@
 
 local gl = require('gl')
 
+gl.utInitContextVersion(3, 2)
+gl.utInitContextFlags(gl.UT_FORWARD_COMPATIBLE + gl.UT_DEBUG)
+gl.utInitContextProfile(gl.UT_CORE_PROFILE)
 gl.utInitDisplayString('rgba double depth>=16 samples~8')
 
 gl.utInitWindowSize(500, 500)

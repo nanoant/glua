@@ -3,6 +3,7 @@
 
 local lib = require 'gl.glut'
 local ffi = require 'ffi'
+local bit = require 'bit'
 local gl  = require 'matrix' -- inherit matrix operators
 
 -- OSX compatiblity extensions
@@ -18,11 +19,21 @@ local imglib = require(onOSX and 'mac.CoreGraphics' or 'lib.png')
 
 -- index metamethod removing gl prefix for funtions
 -- and GL_ prefix for constants
+local glDebug = false
+local glErrorMap
 setmetatable(gl, { __index = function(t, n)
   local s
   -- all functions contain at least one small letter
   if n:find('[a-z]') then
     s = lib['gl'..n]
+    if glDebug and not n:find('^ut') then
+      return function(...)
+        local r = s(...)
+        local e = lib.glGetError()
+        if e ~= 0 then error(glErrorMap[e] or e) end
+        return r
+      end
+    end
   elseif n:find('^UT?_') then
     s = lib['GL'..n]
   else
@@ -55,21 +66,31 @@ ffi.cdef [[
 function gl.utTimerCallback(f) return ffi.cast('glutTimerCallback', f) end
 function gl.utIdleCallback(f)  return ffi.cast('glutIdleCallback', f)  end
 
--- INITIALIZATION ------------------------------------------------------------
+-- ERRORS --------------------------------------------------------------------
 
--- tries to use glutInitContextVersion(3, 2) from FreeGLUT and bails to
--- profile=32 setting on Mac, via: https://github.com/nanoant/osxglut
-function gl.utCoreProfileDisplayString(string)
-  if pcall(function () return lib['glutInitContextVersion'] end ) then
-    gl.utInitContextVersion(3, 2)
-    gl.utInitContextProfile(gl.UT_CORE_PROFILE)
-    gl.utInitContextFlags(gl.UT_FORWARD_COMPATIBLE)
-  elseif ffi.os == 'OSX' then
-    string = string..' profile=32'
-  else
-    error 'Core profile not supported in regular GLUT, please install FreeGLUT.'
+glErrorMap = {
+  [gl.NO_ERROR]          = 'GL_NO_ERROR: No error has been recorded.',
+  [gl.INVALID_ENUM]      = 'GL_INVALID_ENUM: An unacceptable value is specified for an enumerated argument.',
+  [gl.INVALID_VALUE]     = 'GL_INVALID_VALUE: A numeric argument is out of range.',
+  [gl.INVALID_OPERATION] = 'GL_INVALID_OPERATION: The specified operation is not allowed in the current state.',
+  [gl.OUT_OF_MEMORY]     = 'GL_OUT_OF_MEMORY: There is not enough memory left to execute the command.',
+}
+
+-- FREEGLUT COMPATIBILITY FOR OSX --------------------------------------------
+-- NOTE: requires patched GLUT.framework https://github.com/nanoant/osxglut
+if onOSX then
+  local contextProfile, contextVersion
+  function gl.utInitContextVersion(major, minor) contextVersion = major * 10 + minor end
+  function gl.utInitContextProfile(profile)      contextProfile = profile end
+  function gl.utInitContextFlags(flags)
+    if bit.band(flags, gl.UT_DEBUG) ~= 0 then glDebug = true else glDebug = false end
   end
-  gl.utInitDisplayString(string)
+  function gl.utInitDisplayString(string)
+    if contextVersion and (contextVersion < 30 or contextProfile == gl.UT_CORE_PROFILE) then
+      string = string.format('%s profile=%d', string, contextVersion)
+    end
+    lib.glutInitDisplayString(string)
+  end
 end
 
 -- GETTERS -------------------------------------------------------------------
@@ -421,6 +442,10 @@ function gl.GenBuffers(num, out)
   num = num or 1
   out = out or glUintv(num)
   lib.glGenBuffers(num, out)
+  if glDebug then
+    local e = lib.glGetError()
+    if e ~= 0 then error(glErrorMap[e] or e) end
+  end
   return out
 end
 function gl.GenBuffer()
@@ -438,6 +463,10 @@ function gl.GenVertexArrays(num, out)
   lib.glGenVertexArrays(num, out)
   -- glGenVertexArrays does not work in OSX in compatibility profile, we need APPLE extension
   if onOSX and lib.glGetError() == gl.INVALID_OPERATION then lib.glGenVertexArraysAPPLE(num, out) end
+  if glDebug then
+    local e = lib.glGetError()
+    if e ~= 0 then error(glErrorMap[e] or e) end
+  end
   return out
 end
 if onOSX then
@@ -446,6 +475,10 @@ if onOSX then
     lib.glBindVertexArray(num)
     -- glBindVertexArray does not work in OSX in compatibility profile, we need APPLE extension
     if lib.glGetError() == gl.INVALID_OPERATION then lib.glBindVertexArrayAPPLE(num) end
+    if glDebug then
+      local e = lib.glGetError()
+      if e ~= 0 then error(glErrorMap[e] or e) end
+    end
   end
 end
 function gl.GenVertexArray()
