@@ -1,5 +1,13 @@
-#version 150 core
+#if __VERSION__ >= 150
 #define MAX_LIGHTS 8
+out vec4 fragColor;
+#else
+// compatibility mode
+#define MAX_LIGHTS gl_MaxLights
+#define in varying
+#define texture texture2D
+#define fragColor gl_FragColor
+#endif
 
 uniform int numLights;
 
@@ -18,8 +26,6 @@ uniform sampler2D normalTex;
 in vec3 lightDirection[MAX_LIGHTS]; // light direction vector in tangent space
 in vec3 eyeDirection;               // eye direction vector in tangent space
 in vec2 fragTexCoord;
-
-out vec4 fragColor;
 
 void main()
 {

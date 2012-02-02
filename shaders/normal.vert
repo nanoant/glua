@@ -1,5 +1,11 @@
-#version 150 core
+#if __VERSION__ >= 150
 #define MAX_LIGHTS 8
+#else
+// compatibility mode
+#define MAX_LIGHTS gl_MaxLights
+#define in  attribute
+#define out varying
+#endif
 
 uniform int numLights;
 

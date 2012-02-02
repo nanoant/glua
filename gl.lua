@@ -5,9 +5,16 @@ local lib = require 'gl.glut'
 local ffi = require 'ffi'
 local gl  = require 'matrix' -- inherit matrix operators
 
+-- OSX compatiblity extensions
+local onOSX = false
+if ffi.os == 'OSX' then
+  require 'mac.glext'
+  onOSX = true
+end
+
 -- load image library, use CoreGraphics on Mac
 -- and libpng on other platforms
-local imglib = require(ffi.os == 'OSX' and 'mac.CoreGraphics' or 'lib.png')
+local imglib = require(onOSX and 'mac.CoreGraphics' or 'lib.png')
 
 -- index metamethod removing gl prefix for funtions
 -- and GL_ prefix for constants
@@ -338,11 +345,17 @@ local Program = {
 }
 function gl.Program(shaderPaths)
   local program = gl.CreateProgram()
+  local version = tonumber(gl.GetString(gl.SHADING_LANGUAGE_VERSION))
   for type, path in pairs(shaderPaths) do
     local f = assert(io.open(path, 'rb'))
     local source = f:read('*all')
-    local shader = gl.CreateShader(type)
     f:close()
+    -- append version if we are running higher (core) profiles
+    -- do not append new line if it is not necessary
+    if version >= 1.5 and not source:find('^%s*#version') then
+      source = string.format('#version %d core%s%s', version * 100, source:find('^%s*/[*/]') and ' ' or "\n", source)
+    end
+    local shader = gl.CreateShader(type)
     gl.ShaderSource(shader, source)
     gl.CompileShader(shader)
     if not gl.GetShader(shader, gl.COMPILE_STATUS) then
@@ -423,7 +436,17 @@ function gl.GenVertexArrays(num, out)
   num = num or 1
   out = out or glUintv(num)
   lib.glGenVertexArrays(num, out)
+  -- glGenVertexArrays does not work in OSX in compatibility profile, we need APPLE extension
+  if onOSX and lib.glGetError() == gl.INVALID_OPERATION then lib.glGenVertexArraysAPPLE(num, out) end
   return out
+end
+if onOSX then
+  function gl.BindVertexArray(num)
+    num = num or 0
+    lib.glBindVertexArray(num)
+    -- glBindVertexArray does not work in OSX in compatibility profile, we need APPLE extension
+    if lib.glGetError() == gl.INVALID_OPERATION then lib.glBindVertexArrayAPPLE(num) end
+  end
 end
 function gl.GenVertexArray()
   return gl.GenVertexArrays(1)[0]
