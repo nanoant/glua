@@ -104,14 +104,12 @@ function Font:glyphs(str)
   return chars
 end
 
-function Font:draw(str, width)
+function Font:array(program, str, width)
   width = width or 1e20
   local glyphs = self:glyphs(str)
-  gl.Enable(gl.TEXTURE_RECTANGLE)
-  gl.BindTexture(gl.TEXTURE_RECTANGLE, self.texture)
-  gl.Begin(gl.QUADS)
   local x = 0
   local y = 0
+  local attr = {}
   for index = 1, #glyphs do
     local glyph = glyphs[index]
     local ch = glyph.ch
@@ -128,27 +126,46 @@ function Font:draw(str, width)
       x = 0
       y = y + self.size
     else
-      gl.TexCoord2i(glyph.x,
-                    glyph.y)
-      gl.Vertex2i(x + glyph.left,
-                  y + self.size - glyph.top)
-      gl.TexCoord2i(glyph.x + glyph.pitch,
-                    glyph.y)
-      gl.Vertex2i(x + glyph.left + glyph.pitch,
-                  y + self.size - glyph.top)
-      gl.TexCoord2i(glyph.x + glyph.pitch,
-                    glyph.y + glyph.height)
-      gl.Vertex2i(x + glyph.left + glyph.pitch,
-                  y + self.size - glyph.top + glyph.height)
-      gl.TexCoord2i(glyph.x,
-                    glyph.y + glyph.height)
-      gl.Vertex2i(x + glyph.left,
-                  y + self.size - glyph.top + glyph.height)
+      attr[#attr+1] = x + glyph.left
+      attr[#attr+1] = y + self.size - glyph.top
+      attr[#attr+1] = 0
+      attr[#attr+1] = glyph.x
+      attr[#attr+1] = glyph.y
+
+      attr[#attr+1] = x + glyph.left + glyph.pitch
+      attr[#attr+1] = y + self.size - glyph.top
+      attr[#attr+1] = 0
+      attr[#attr+1] = glyph.x + glyph.pitch
+      attr[#attr+1] = glyph.y
+
+      attr[#attr+1] = x + glyph.left + glyph.pitch
+      attr[#attr+1] = y + self.size - glyph.top + glyph.height
+      attr[#attr+1] = 0
+      attr[#attr+1] = glyph.x + glyph.pitch
+      attr[#attr+1] = glyph.y + glyph.height
+
+      attr[#attr+1] = attr[#attr-4]
+      attr[#attr+1] = attr[#attr-4]
+      attr[#attr+1] = attr[#attr-4]
+      attr[#attr+1] = attr[#attr-4]
+      attr[#attr+1] = attr[#attr-4]
+
+      attr[#attr+1] = x + glyph.left
+      attr[#attr+1] = y + self.size - glyph.top + glyph.height
+      attr[#attr+1] = 0
+      attr[#attr+1] = glyph.x
+      attr[#attr+1] = glyph.y + glyph.height
+
+      attr[#attr+1] = attr[#attr-24]
+      attr[#attr+1] = attr[#attr-24]
+      attr[#attr+1] = attr[#attr-24]
+      attr[#attr+1] = attr[#attr-24]
+      attr[#attr+1] = attr[#attr-24]
+
       x = x + glyph.advance
     end
   end
-  gl.End()
-  gl.Disable(gl.TEXTURE_RECTANGLE)
+  return gl.Array(program, attr, 'position', 3, 'texCoord', 2)
 end
 
 return gui

@@ -78,7 +78,6 @@ local textures = gl.Textures(textures)
 
 -- load shaders
 local normalProgram = gl.Program(normalShader)
--- local colorProgram = gl.Program(colorShader)
 gl.UseProgram(normalProgram.gl)
 
 -- set up lights
