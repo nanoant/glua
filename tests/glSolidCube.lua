@@ -43,7 +43,7 @@ local lights = {
 }
 
 -- initialize display (note: glut module calls glutInit)
-local core = true
+local core = false
 for i = 1, #arg do
   if     arg[i]:match('^--compat$') then core = false
   elseif arg[i]:match('^--help$')   then
@@ -108,7 +108,7 @@ normalProgram.materialSpecular  = {1,  1,  1 }
 normalProgram.materialShininess = .2
 
 -- load solid cube
-local cubeArray, cubeSize = gl.CubeArray(normalProgram)
+-- local cubeArray, cubeSize = gl.CubeArray(normalProgram)
 
 -- setup matrices
 local projection = gl.identity
@@ -126,9 +126,11 @@ gl.utReshapeFunc(function(w, h)
 end)
 
 -- idle callbacks
+local frames, clock
 local rotateCallback = gl.utIdleCallback(function()
   light = gl.Rotatey(.002) * light
   normalProgram.lightMatrix = light
+  frames = frames + 1
   gl.utPostRedisplay()
 end)
 
@@ -148,8 +150,11 @@ gl.utMouseFunc(function(button, state, x, y)
   -- rotate teapot
   if button == gl.UT_RIGHT_BUTTON then
     if state == gl.UT_DOWN then
+      frames = 0
+      clock  = os.clock()
       gl.utIdleFunc(rotateCallback)
     else
+      print((frames / (os.clock() - clock))..' FPS')
       gl.utIdleFunc(nil)
     end
   end
@@ -164,8 +169,10 @@ gl.utDisplayFunc(function()
   normalProgram.normalMatrix              = modelView.inv.t.mat3
 
   gl.Clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT)
-  gl.BindVertexArray(cubeArray)
-  gl.DrawArrays(gl.TRIANGLES, 0, cubeSize)
+  -- gl.BindVertexArray(cubeArray)
+  -- gl.DrawArrays(gl.TRIANGLES, 0, cubeSize)
+  -- gl.BindVertexArray(0)
+  gl.SolidCube(normalProgram)
   gl.utSwapBuffers()
 end)
 

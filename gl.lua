@@ -19,7 +19,8 @@ local imglib = require(onOSX and 'mac.CoreGraphics' or 'lib.png')
 
 -- index metamethod removing gl prefix for funtions
 -- and GL_ prefix for constants
-local glDebug = false
+local glDebug       = false
+local glCoreProfile = false
 local glErrorMap
 setmetatable(gl, { __index = function(t, n)
   local s
@@ -79,17 +80,22 @@ glErrorMap = {
 -- FREEGLUT COMPATIBILITY FOR OSX --------------------------------------------
 -- NOTE: requires patched GLUT.framework https://github.com/nanoant/osxglut
 if onOSX then
-  local contextProfile, contextVersion
+  local contextVersion, contextProfile
   function gl.utInitContextVersion(major, minor) contextVersion = major * 10 + minor end
   function gl.utInitContextProfile(profile)      contextProfile = profile end
-  function gl.utInitContextFlags(flags)
-    if bit.band(flags, gl.UT_DEBUG) ~= 0 then glDebug = true else glDebug = false end
-  end
+  function gl.utInitContextFlags(flags)          glDebug = bit.band(flags, gl.UT_DEBUG) ~= 0 end
   function gl.utInitDisplayString(string)
-    if contextVersion and (contextVersion < 30 or contextProfile == gl.UT_CORE_PROFILE) then
+    -- NOTE: core profile works only for glutInitDisplayString
+    glCoreProfile = contextProfile == gl.UT_CORE_PROFILE
+    if contextVersion and (contextVersion < 30 or glCoreProfile) then
       string = string.format('%s profile=%d', string, contextVersion)
     end
     lib.glutInitDisplayString(string)
+  end
+else
+  function gl.utInitContextProfile(profile)
+    glCoreProfile = profile == gl.UT_CORE_PROFILE
+    return lib.glutInitContextProfile(profile)
   end
 end
 
@@ -366,14 +372,14 @@ local Program = {
 }
 function gl.Program(shaderPaths)
   local program = gl.CreateProgram()
-  local version = tonumber(gl.GetString(gl.SHADING_LANGUAGE_VERSION))
   for type, path in pairs(shaderPaths) do
     local f = assert(io.open(path, 'rb'))
     local source = f:read('*all')
     f:close()
     -- append version if we are running higher (core) profiles
     -- do not append new line if it is not necessary
-    if version >= 1.5 and not source:find('^%s*#version') then
+    if glCoreProfile and not source:find('^%s*#version') then
+      local version = tonumber(gl.GetString(gl.SHADING_LANGUAGE_VERSION))
       source = string.format('#version %d core%s%s', version * 100, source:find('^%s*/[*/]') and ' ' or "\n", source)
     end
     local shader = gl.CreateShader(type)
@@ -457,35 +463,59 @@ end
 
 -- ARRAYS --------------------------------------------------------------------
 
+-- NOTE: in non 3.2 core profile (<Lion) we must use APPLE extensions for
+-- vertex arrays, because regular fail with GL_INVALID_OPERATION
+if onOSX then
+  function gl.BindVertexArray(...)
+    local f = not glCoreProfile and lib.glBindVertexArrayAPPLE or lib.glBindVertexArray
+    local r = f(...)
+    if glDebug then
+      local e = lib.glGetError()
+      if e ~= 0 then error(glErrorMap[e] or e) end
+    else
+      rawset(gl, 'BindVertexArray', f)
+    end
+    return r
+  end
+  function gl.IsVertexArray(...)
+    local f = not glCoreProfile and lib.glIsVertexArrayAPPLE or lib.glIsVertexArray
+    local r = f(...)
+    if glDebug then
+      local e = lib.glGetError()
+      if e ~= 0 then error(glErrorMap[e] or e) end
+    else
+      rawset(gl, 'IsVertexArray', f)
+    end
+    return r
+  end
+end
 function gl.GenVertexArrays(num, out)
   num = num or 1
   out = out or glUintv(num)
-  lib.glGenVertexArrays(num, out)
-  -- glGenVertexArrays does not work in OSX in compatibility profile, we need APPLE extension
-  if onOSX and lib.glGetError() == gl.INVALID_OPERATION then lib.glGenVertexArraysAPPLE(num, out) end
+  if onOSX and not glCoreProfile then
+    lib.glGenVertexArraysAPPLE(num, out)
+  else
+    lib.glGenVertexArrays(num, out)
+  end
   if glDebug then
     local e = lib.glGetError()
     if e ~= 0 then error(glErrorMap[e] or e) end
   end
   return out
 end
-if onOSX then
-  function gl.BindVertexArray(num)
-    num = num or 0
-    lib.glBindVertexArray(num)
-    -- glBindVertexArray does not work in OSX in compatibility profile, we need APPLE extension
-    if lib.glGetError() == gl.INVALID_OPERATION then lib.glBindVertexArrayAPPLE(num) end
-    if glDebug then
-      local e = lib.glGetError()
-      if e ~= 0 then error(glErrorMap[e] or e) end
-    end
-  end
-end
 function gl.GenVertexArray()
   return gl.GenVertexArrays(1)[0]
 end
 function gl.DeleteVertexArray(...)
-  return gl.DeleteVertexArrays(select('#', ...), glUintv(select('#', ...), ...))
+  if onOSX and not glCoreProfile then
+    lib.glDeleteVertexArraysAPPLE(select('#', ...), glUintv(select('#', ...), ...))
+  else
+    lib.glDeleteVertexArrays(select('#', ...), glUintv(select('#', ...), ...))
+  end
+  if glDebug then
+    local e = lib.glGetError()
+    if e ~= 0 then error(glErrorMap[e] or e) end
+  end
 end
 function gl.Array(program, data, ...)
   local array = gl.GenVertexArray()

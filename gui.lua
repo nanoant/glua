@@ -3,9 +3,6 @@ local ft    = require 'lib.ft'
 local iconv = require 'lib.iconv'
 local ic    = iconv.open('UCS-2LE', 'UTF-8')
 
--- set up texture rectangle extension
-gl.TEXTURE_RECTANGLE = 0x84F5
-
 local gui = {}
 
 local Font = {}
@@ -29,9 +26,8 @@ function gui:Font()
   self.y         = 0
   self.maxheight = 0
   self.texture   = gl.GenTexture()
-  gl.Enable(gl.TEXTURE_RECTANGLE)
   gl.BindTexture(gl.TEXTURE_RECTANGLE, self.texture)
-  gl.TexImage2D(gl.TEXTURE_RECTANGLE, 0, gl.ALPHA, self.texdim, self.texdim, 0, gl.ALPHA, gl.UNSIGNED_BYTE, nil)
+  gl.TexImage2D(gl.TEXTURE_RECTANGLE, 0, gl.RED, self.texdim, self.texdim, 0, gl.RED, gl.UNSIGNED_BYTE, nil)
   gl.PixelStorei(gl.UNPACK_ALIGNMENT, 1);
   return self
 end
@@ -90,7 +86,7 @@ function Font:glyphs(str)
         gl.TexSubImage2D(gl.TEXTURE_RECTANGLE, 0,
                          entry.x, entry.y,
                          entry.pitch, entry.height,
-                         gl.ALPHA, gl.UNSIGNED_BYTE, bitmap.buffer)
+                         gl.RED, gl.UNSIGNED_BYTE, bitmap.buffer)
         -- move horizontally
         if self.maxheight < entry.height then
           self.maxheight = entry.height
