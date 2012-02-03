@@ -13,7 +13,7 @@ local guiShader = {
 }
 
 -- initialize display (note: glut module calls glutInit)
-local core = false
+local core = true
 for i = 1, #arg do
   if     arg[i]:match('^--compat$') then core = false
   elseif arg[i]:match('^--help$')   then

@@ -546,14 +546,22 @@ end
 local function glLoadArray(program, ptr, ...)
   local attr = {}
   local vertexSize = 0
-  for i = 1, select('#', ...), 2 do
-    local location = select(i, ...)
-    local size     = select(i+1, ...) or 3
-    if type(location) == 'string' then
+  local i = 1
+  local count = select('#', ...)
+  while i <= count do
+    local size     = select(i, ...)
+    local next     = i < count and select(i+1, ...) or nil
+    local location = i-1
+    i = i+1
+    if type(size) == 'string' then
       if program then
-        location = gl.GetAttribLocation(program, location)
+        location = gl.GetAttribLocation(program, size)
+      end
+      size = next
+      if type(size) == 'string' or next == nil then
+        size = 3 -- default size if not specified
       else
-        location = i - 1 -- called without the program, just assume location is param index
+        i = i+1
       end
     end
     if location >= 0 then
@@ -568,8 +576,8 @@ local function glLoadArray(program, ptr, ...)
   vertexSize = ffi.sizeof(glFloatv, vertexSize)
   local totalSize = 0
   for i = 1, #attr do
-    gl.EnableVertexAttribArray(attr[i].location)
     gl.VertexAttribPointer(attr[i].location, attr[i].size, gl.FLOAT, gl.FALSE, vertexSize, ptr+totalSize)
+    gl.EnableVertexAttribArray(attr[i].location)
     totalSize = totalSize + attr[i].size
   end
   return totalSize
@@ -587,13 +595,16 @@ function gl.array(program, data, ...)
   local ptr  = glFloatv(#data, data)
   gl.BindBuffer(gl.ARRAY_BUFFER, buf)
   gl.BufferData(gl.ARRAY_BUFFER, size, ptr, gl.STATIC_DRAW)
-  return setmetatable({ program = program, gl = array, size = math.floor(#data / glLoadArray(glProgram, glFloatp(nil), ...)) }, arrayMT)
+  local self = setmetatable({ program = program, gl = array, size = math.floor(#data / glLoadArray(glProgram, glFloatp(nil), ...)) }, arrayMT)
+  gl.BindBuffer(gl.ARRAY_BUFFER, 0)
+  return self
 end
 
+-- NOTE: this is NOT supported in core profile
 function gl.draw(program, mode, data, ...)
   local glProgram = type(program) == 'table' and program.gl or program
-  gl.BindVertexArray(0)
-  gl.DrawArrays(gl.TRIANGLES, 0, math.floor(#data / glLoadArray(glProgram, glFloatv(#data, data), ...)))
+  local ptr = glFloatv(#data, data)
+  gl.DrawArrays(gl.TRIANGLES, 0, math.floor(#data / glLoadArray(glProgram, ptr, ...)))
 end
 
 function arrayMT:__gc(self)
