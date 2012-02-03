@@ -29,12 +29,16 @@ local glFloatp = ffi.typeof('GLfloat *')
 local mat2
 mat2 = ffi.metatype('GLmat2', {
   __mul = function(a, b)
-    if not ffi.istype(mat2, b) then
+    if not ffi.istype(mat2, a) then a, b = b, a end
+    if ffi.istype(mat2, b) then
+      return mat2(a.m11*b.m11 + a.m21*b.m12,  a.m11*b.m21 + a.m21*b.m22,
+                  a.m12*b.m11 + a.m22*b.m12,  a.m12*b.m21 + a.m22*b.m22)
+    elseif ffi.istype(vec2, b) then
       return vec2(a.m11*b.x + a.m21*b.y,
                   a.m12*b.x + a.m22*b.y)
     end
-    return mat2(a.m11*b.m11 + a.m21*b.m12,  a.m11*b.m21 + a.m21*b.m22,
-                a.m12*b.m11 + a.m22*b.m12,  a.m12*b.m21 + a.m22*b.m22)
+    return mat2(a.m11 * b, a.m21 * b,
+                a.m12 * b, a.m22 * b)
   end,
   __index = function(m, i)
     if i == 't' then
@@ -57,16 +61,15 @@ mat2 = ffi.metatype('GLmat2', {
 local mat3
 mat3 = ffi.metatype('GLmat3', {
   __mul = function(a, b)
-    if not ffi.istype(mat3, b) then
-      return vec3(a.m11*b.x + a.m21*b.y + a.m31*b.z,
-                  a.m12*b.x + a.m22*b.y + a.m32*b.z,
-                  a.m13*b.x + a.m23*b.y + a.m33*b.z)
-    elseif not ffi.istype(mat4, a) then
-      a, b = b, a
-    elseif ffi.istype(mat4, b) then
+    if not ffi.istype(mat3, a) then a, b = b, a end
+    if ffi.istype(mat3, b) then
       return mat3(a.m11*b.m11 + a.m21*b.m12 + a.m31*b.m13,  a.m11*b.m21 + a.m21*b.m22 + a.m31*b.m23,  a.m11*b.m31 + a.m21*b.m32 + a.m31*b.m33,
                   a.m12*b.m11 + a.m22*b.m12 + a.m32*b.m13,  a.m12*b.m21 + a.m22*b.m22 + a.m32*b.m23,  a.m12*b.m31 + a.m22*b.m32 + a.m32*b.m33,
                   a.m13*b.m11 + a.m23*b.m12 + a.m33*b.m13,  a.m13*b.m21 + a.m23*b.m22 + a.m33*b.m23,  a.m13*b.m31 + a.m23*b.m32 + a.m33*b.m33)
+    elseif ffi.istype(vec3, b) then
+      return vec3(a.m11*b.x + a.m21*b.y + a.m31*b.z,
+                  a.m12*b.x + a.m22*b.y + a.m32*b.z,
+                  a.m13*b.x + a.m23*b.y + a.m33*b.z)
     end
     return mat3(m.m11 * b, m.m21 * b, m.m31 * b,
                 m.m12 * b, m.m22 * b, m.m32 * b,
@@ -104,18 +107,8 @@ mat3 = ffi.metatype('GLmat3', {
 local mat4
 mat4 = ffi.metatype('GLmat4', {
   __mul = function(a, b)
-    if ffi.istype(vec4, b) then
-      return vec4(a.m11*b.x + a.m21*b.y + a.m31*b.z + a.m41*b.w,
-                  a.m12*b.x + a.m22*b.y + a.m32*b.z + a.m42*b.w,
-                  a.m13*b.x + a.m23*b.y + a.m33*b.z + a.m43*b.w,
-                  a.m14*b.x + a.m24*b.y + a.m34*b.z + a.m44*b.w)
-    elseif ffi.istype(vec3, b) then
-      return vec3(a.m11*b.x + a.m21*b.y + a.m31*b.z + a.m41,
-                  a.m12*b.x + a.m22*b.y + a.m32*b.z + a.m42,
-                  a.m13*b.x + a.m23*b.y + a.m33*b.z + a.m43)
-    elseif not ffi.istype(mat4, a) then
-      a, b = b, a
-    elseif ffi.istype(mat4, b) then
+    if not ffi.istype(mat4, a) then a, b = b, a end
+    if ffi.istype(mat4, b) then
       return mat4(a.m11*b.m11 + a.m21*b.m12 + a.m31*b.m13 + a.m41*b.m14,
                   a.m11*b.m21 + a.m21*b.m22 + a.m31*b.m23 + a.m41*b.m24,
                   a.m11*b.m31 + a.m21*b.m32 + a.m31*b.m33 + a.m41*b.m34,
@@ -135,6 +128,15 @@ mat4 = ffi.metatype('GLmat4', {
                   a.m14*b.m21 + a.m24*b.m22 + a.m34*b.m23 + a.m44*b.m24,
                   a.m14*b.m31 + a.m24*b.m32 + a.m34*b.m33 + a.m44*b.m34,
                   a.m14*b.m41 + a.m24*b.m42 + a.m34*b.m43 + a.m44*b.m44)
+    elseif ffi.istype(vec4, b) then
+      return vec4(a.m11*b.x + a.m21*b.y + a.m31*b.z + a.m41*b.w,
+                  a.m12*b.x + a.m22*b.y + a.m32*b.z + a.m42*b.w,
+                  a.m13*b.x + a.m23*b.y + a.m33*b.z + a.m43*b.w,
+                  a.m14*b.x + a.m24*b.y + a.m34*b.z + a.m44*b.w)
+    elseif ffi.istype(vec3, b) then
+      return vec3(a.m11*b.x + a.m21*b.y + a.m31*b.z + a.m41,
+                  a.m12*b.x + a.m22*b.y + a.m32*b.z + a.m42,
+                  a.m13*b.x + a.m23*b.y + a.m33*b.z + a.m43)
     end
     return mat4(a.m11 * b, a.m21 * b, a.m31 * b, a.m41 * b,
                 a.m12 * b, a.m22 * b, a.m32 * b, a.m42 * b,
