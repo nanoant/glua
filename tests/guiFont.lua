@@ -1,12 +1,11 @@
 local gl  = require 'gl'
 local gui = require 'gui'
 local size  = 14
-local font  = '/System/Library/Fonts/LucidaGrande.ttc'
--- local font  = '/System/Library/Fonts/Menlo.ttc'
-local lorem = [[
-      Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-      Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+local lorem = [[   Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+ABCDEFGHIJKLMNOPQRSTWXYZ abcdefghijklmnopqrstwxyz 01234567890 ~!@#$%^&*()
 ]]
+lorem = lorem..lorem..lorem..lorem..lorem..lorem
+
 
 local guiShader = {
   [gl.VERTEX_SHADER]   = 'shaders/gui.vert',
@@ -45,9 +44,16 @@ gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 local guiProgram = gl.Program(guiShader)
 gl.UseProgram(guiProgram.gl)
 gl.Uniform4f(guiProgram.color,    0, 0, 0, 1)
-gl.Uniform1i(guiProgram.alphaMask, 1)
 
 local textArray, textSize
+local texArray, texSize = gl.Array(guiProgram, {
+  256, 256, 0,   0,   0,
+  768, 256, 0, 512,   0,
+  768, 768, 0, 512, 512,
+  768, 768, 0, 512, 512, -- dup
+  256, 768, 0,   0, 512,
+  256, 256, 0,   0,   0, -- dup
+}, 'position', 3, 'texCoord', 2)
 
 -- called upon window resize & creation
 gl.utReshapeFunc(function(w, h)
@@ -86,8 +92,13 @@ end)
 -- main drawing function
 gl.utDisplayFunc(function()
   gl.Clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT)
+  guiProgram.color = {0, 0, 1, 1}
+  guiProgram.alphaMask = true
   gl.BindVertexArray(textArray)
   gl.DrawArrays(gl.TRIANGLES, 0, textSize)
+  gl.BindVertexArray(texArray)
+  guiProgram.color = {1, 0, 0, .5}
+  gl.DrawArrays(gl.TRIANGLES, 0, texSize)
   gl.utSwapBuffers()
 end)
 

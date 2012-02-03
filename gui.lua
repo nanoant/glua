@@ -1,4 +1,5 @@
 local gl    = require 'gl'
+local ffi   = require 'ffi'
 local ft    = require 'lib.ft'
 local iconv = require 'lib.iconv'
 local ic    = iconv.open('UCS-2LE', 'UTF-8')
@@ -9,6 +10,9 @@ local Font = {}
 
 function gui:Font()
   self = self or {}
+  self.font    = self.font   or ffi.os == 'OSX'     and '/System/Library/Fonts/LucidaGrande.ttc'
+                             or ffi.os == 'Linux'   and '/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf'
+                             or ffi.os == 'Windows' and 'C:\\WINDOWS\\fonts\\tahoma.ttf'
   self.lcd     = self.lcd    or false
   self.size    = self.size   or 12
   self.texdim  = self.texdim or 512

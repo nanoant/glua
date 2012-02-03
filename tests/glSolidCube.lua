@@ -5,7 +5,8 @@
 --
 -- Usage: Use left mouse button to rotate cube, right mouse button to rotate lights
 
-local gl = require 'gl'
+local gl  = require 'gl'
+local gui = require 'gui'
 
 -- http://www.tutorialsforblender3d.com/Textures/Bricks-NormalMap/Bricks_Normal_1.html
 -- http://www.tutorialsforblender3d.com/Textures/Wall-NormalMap/Wall_Normal_1.html
@@ -169,9 +170,6 @@ gl.utDisplayFunc(function()
   normalProgram.normalMatrix              = modelView.inv.t.mat3
 
   gl.Clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT)
-  -- gl.BindVertexArray(cubeArray)
-  -- gl.DrawArrays(gl.TRIANGLES, 0, cubeSize)
-  -- gl.BindVertexArray(0)
   gl.SolidCube(normalProgram)
   gl.utSwapBuffers()
 end)
