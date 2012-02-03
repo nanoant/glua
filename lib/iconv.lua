@@ -31,7 +31,7 @@ int iconv_close (iconv_t /*cd*/);
 ]]
 
 -- setup library & remove FT_ prefix
-local lib   = ffi.load 'iconv'
+local lib   = ffi.os == 'Linux' and ffi.C or ffi.load 'iconv'
 local iconv = {}
 setmetatable(iconv, {
   __index = function(t, n)
