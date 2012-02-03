@@ -9,11 +9,11 @@ out vec4 fragColor;
 
 uniform sampler2DRect tex;
 uniform vec4 color;
-uniform bool alphaRed;
+uniform bool alphaMask;
 
 in vec2 fragTexCoord;
 
 void main()
 {
-	fragColor = alphaRed ? vec4(color.rgb, color.a * texture(tex, fragTexCoord).r) : color * texture(tex, fragTexCoord);
+	fragColor = alphaMask ? vec4(color.rgb, color.a * texture(tex, fragTexCoord).r) : color * texture(tex, fragTexCoord);
 }

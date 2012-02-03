@@ -243,7 +243,13 @@ enum {
   FT_LOAD_NO_AUTOHINT                  = 0x8000U,
   /* used internally only by certain font drivers! */
   FT_LOAD_ADVANCE_ONLY                 = 0x100,
-  FT_LOAD_SBITS_ONLY                   = 0x4000
+  FT_LOAD_SBITS_ONLY                   = 0x4000,
+  /* ported from FT_LOAD_TARGET_(x) macro */
+  FT_LOAD_TARGET_NORMAL                = 0x00000,
+  FT_LOAD_TARGET_LIGHT                 = 0x10000,
+  FT_LOAD_TARGET_MONO                  = 0x20000,
+  FT_LOAD_TARGET_LCD                   = 0x30000,
+  FT_LOAD_TARGET_LCD_V                 = 0x40000
 };
 typedef enum FT_Render_Mode_
 {
@@ -299,6 +305,7 @@ assert(ft.Init_FreeType(libraryPtr))
 ft.library = libraryPtr[0]
 
 -- math macros
+function ft.Float(x) return tonumber(x) / 64 end
 function ft.Ceil(x)  return bit.band(tonumber(x) + 63, -64) / 64 end
 function ft.Floor(x) return bit.band(tonumber(x), -64) / 64 end
 

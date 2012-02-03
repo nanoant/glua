@@ -9,6 +9,7 @@ local Font = {}
 
 function gui:Font()
   self = self or {}
+  self.lcd     = self.lcd    or false
   self.size    = self.size   or 12
   self.texdim  = self.texdim or 512
   -- load font
@@ -27,8 +28,14 @@ function gui:Font()
   self.maxheight = 0
   self.texture   = gl.GenTexture()
   gl.BindTexture(gl.TEXTURE_RECTANGLE, self.texture)
-  gl.TexImage2D(gl.TEXTURE_RECTANGLE, 0, gl.RED, self.texdim, self.texdim, 0, gl.RED, gl.UNSIGNED_BYTE, nil)
-  gl.PixelStorei(gl.UNPACK_ALIGNMENT, 1);
+  local format
+  if self.lcd then
+    format = gl.RGB
+  else
+    format = gl.RED
+    gl.PixelStorei(gl.UNPACK_ALIGNMENT, 1)
+  end
+  gl.TexImage2D(gl.TEXTURE_RECTANGLE, 0, format, self.texdim, self.texdim, 0, format, gl.UNSIGNED_BYTE, nil)
   return self
 end
 
@@ -40,19 +47,28 @@ function Font:glyphs(str)
   local ucs2, size = iconv.iconv(ic, str, true)
   local map = self.map
   local chars = {}
+  local options = ft.LOAD_FORCE_AUTOHINT + ft.LOAD_RENDER
+  local lcd = self.lcd
+  local format
+  if lcd then
+    options = options + ft.LOAD_TARGET_LCD
+    format  = gl.RGB
+  else
+    format  = gl.RED
+  end
   for c = 0, size-1 do
     local ch = ucs2[c]
     local entry = map[ch]
     if entry == nil then
       local index = ft.Get_Char_Index(self.face, ch)
-      if ft.Load_Glyph(self.face, index, ft.LOAD_RENDER) ~= 0 then
+      if ft.Load_Glyph(self.face, index, options) ~= 0 then
         entry = {
           minx    = 0,
           maxx    = 0,
           maxy    = 0,
           miny    = 0,
           advance = 0,
-          pitch   = 0,
+          width   = 0,
           height  = 0,
           x       = 0,
           y       = 0,
@@ -69,13 +85,13 @@ function Font:glyphs(str)
         entry.maxy    = ft.Floor(glyph.metrics.horiBearingY)
         entry.miny    = entry.maxy - ft.Ceil(glyph.metrics.height)
         -- entry.advance = ft.Ceil(glyph.metrics.horiAdvance)
-        entry.advance = ft.Ceil(glyph.advance.x)
-        entry.pitch   = bitmap.pitch
+        entry.advance = ft.Float(glyph.advance.x)
+        entry.width   = lcd and math.floor(bitmap.pitch / 3) or bitmap.pitch
         entry.height  = bitmap.rows
         entry.left    = glyph.bitmap_left
         entry.top     = glyph.bitmap_top
         -- skip to next row
-        if self.x + entry.pitch > self.texdim then
+        if self.x + entry.width > self.texdim then
           self.x = 0
           self.y = self.y + self.maxheight
           self.maxheight = 0
@@ -85,13 +101,13 @@ function Font:glyphs(str)
         -- load character to texture
         gl.TexSubImage2D(gl.TEXTURE_RECTANGLE, 0,
                          entry.x, entry.y,
-                         entry.pitch, entry.height,
-                         gl.RED, gl.UNSIGNED_BYTE, bitmap.buffer)
+                         entry.width, entry.height,
+                         format, gl.UNSIGNED_BYTE, bitmap.buffer)
         -- move horizontally
         if self.maxheight < entry.height then
           self.maxheight = entry.height
         end
-        self.x = self.x + entry.pitch
+        self.x = self.x + entry.width
       end
       map[ch] = entry
     end
@@ -128,16 +144,16 @@ function Font:array(program, str, width)
       attr[#attr+1] = glyph.x
       attr[#attr+1] = glyph.y
 
-      attr[#attr+1] = x + glyph.left + glyph.pitch
+      attr[#attr+1] = x + glyph.left + glyph.width
       attr[#attr+1] = y + self.size - glyph.top
       attr[#attr+1] = 0
-      attr[#attr+1] = glyph.x + glyph.pitch
+      attr[#attr+1] = glyph.x + glyph.width
       attr[#attr+1] = glyph.y
 
-      attr[#attr+1] = x + glyph.left + glyph.pitch
+      attr[#attr+1] = x + glyph.left + glyph.width
       attr[#attr+1] = y + self.size - glyph.top + glyph.height
       attr[#attr+1] = 0
-      attr[#attr+1] = glyph.x + glyph.pitch
+      attr[#attr+1] = glyph.x + glyph.width
       attr[#attr+1] = glyph.y + glyph.height
 
       attr[#attr+1] = attr[#attr-4]
