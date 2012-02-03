@@ -39,12 +39,12 @@ function gui:font()
   return self
 end
 
-function fontMT:__gc(self)
+function fontMT:__gc()
   ft.Face_Done(self.face)
   gl.DeleteTexture(self.texture)
 end
 
-function fontMT:__call(self)
+function fontMT:__call()
   gl.BindTexture(self.texture)
 end
 

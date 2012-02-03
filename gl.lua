@@ -373,17 +373,17 @@ function gl.program(shaderPaths)
   return setmetatable({ gl = program, locations = {} }, programMT)
 end
 
-function programMT.__index(program, uniform)
-  local location = program.locations[uniform]
+function programMT:__index(uniform)
+  local location = self.locations[uniform]
   if location == nil then
-    location = gl.GetUniformLocation(program.gl, uniform)
-    program.locations[uniform] = location
+    location = gl.GetUniformLocation(self.gl, uniform)
+    self.locations[uniform] = location
   end
   return location
 end
 
-function programMT.__newindex(program, uniform, value)
-  local location = program[uniform]
+function programMT:__newindex(uniform, value)
+  local location = self[uniform]
   if ffi.istype(gl.mat4, value) then
     gl.UniformMatrix4fv(location,  1, gl.TRUE, value.gl)
   elseif ffi.istype(gl.mat3, value) then
@@ -397,12 +397,12 @@ function programMT.__newindex(program, uniform, value)
   end
 end
 
-function programMT.__gc(program)
-  gl.DeleteProgram(program.gl)
+function programMT:__gc()
+  gl.DeleteProgram(self.gl)
 end
 
-function programMT.__call(program)
-  gl.UseProgram(program.gl)
+function programMT:__call()
+  gl.UseProgram(self.gl)
 end
 
 -- TEXTURES ------------------------------------------------------------------
@@ -452,13 +452,13 @@ function gl.texture(path, target)
   return nil
 end
 
-function textureMT.__gc(texture)
-  gl.DeleteTexture(texture.gl)
+function textureMT:__gc()
+  gl.DeleteTexture(self.gl)
 end
 
-function textureMT.__call(texture, target)
+function textureMT:__call(target)
   if target then gl.ActiveTexture(gl.TEXTURE0 + target) end
-  gl.BindTexture(texture.gl)
+  gl.BindTexture(self.gl)
 end
 
 function gl.textures(paths)
@@ -596,15 +596,15 @@ function gl.draw(program, mode, data, ...)
   gl.DrawArrays(gl.TRIANGLES, 0, math.floor(#data / glLoadArray(glProgram, glFloatv(#data, data), ...)))
 end
 
-function arrayMT.__gc(array)
-  gl.DeleteVertexArray(array.gl)
+function arrayMT:__gc(self)
+  gl.DeleteVertexArray(self.gl)
 end
 
-function arrayMT.__call(array, mode, from, size)
+function arrayMT:__call(mode, from, size)
   mode = mode or gl.TRIANGLES
   from = from or 0
-  size = size or array.size
-  gl.BindVertexArray(array.gl)
+  size = size or self.size
+  gl.BindVertexArray(self.gl)
   gl.DrawArrays(mode, from, size)
 end
 
