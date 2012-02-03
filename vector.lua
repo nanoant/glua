@@ -36,8 +36,8 @@ vec2 = ffi.metatype('GLvec2', {
 })
 local vec3
 vec3 = ffi.metatype('GLvec3', {
-  __add = function(a, b) return vec2(a.x + b.x, a.y + b.y, a.z + b.z) end,
-  __sub = function(a, b) return vec2(a.x - b.x, a.y - b.y, a.z - b.z) end,
+  __add = function(a, b) return vec3(a.x + b.x, a.y + b.y, a.z + b.z) end,
+  __sub = function(a, b) return vec3(a.x - b.x, a.y - b.y, a.z - b.z) end,
   __mul = function(a, b)
     if not ffi.istype(vec3, b) then
     return vec3(a.x * b, a.y * b, a.z * b) end
@@ -61,8 +61,8 @@ vec3 = ffi.metatype('GLvec3', {
 })
 local vec4
 vec4 = ffi.metatype('GLvec4', {
-  __add = function(a, b) return vec2(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w) end,
-  __sub = function(a, b) return vec2(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w) end,
+  __add = function(a, b) return vec4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w) end,
+  __sub = function(a, b) return vec4(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w) end,
   __mul = function(a, b)
     if not ffi.istype(vec4, b) then
     return vec4(a.x * b, a.y * b, a.z * b, a.w * b) end
