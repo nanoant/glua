@@ -4,47 +4,27 @@ local math = require 'math'
 local sin, cos = math.sin, math.cos
 
 ffi.cdef [[
-typedef union {
-  struct {
-    GLfloat m11, m21;
-    GLfloat m12, m22;
-  };
-  struct {
-    GLfloat a, b, c, d;
-  };
-  GLfloat gl[4];
+typedef struct {
+  GLfloat m11, m21;
+  GLfloat m12, m22;
 } GLmat2;
-typedef union {
-  struct {
-    GLfloat m11, m21, m31;
-    GLfloat m12, m22, m32;
-    GLfloat m13, m23, m33;
-  };
-  struct {
-    GLfloat a, b, c, d, e, f, g, h, k;
-  };
-  GLfloat gl[9];
+typedef struct {
+  GLfloat m11, m21, m31;
+  GLfloat m12, m22, m32;
+  GLfloat m13, m23, m33;
 } GLmat3;
-typedef union {
-  struct {
-    GLfloat m11, m21, m31, m41;
-    GLfloat m12, m22, m32, m42;
-    GLfloat m13, m23, m33, m43;
-    GLfloat m14, m24, m34, m44;
-  };
-  struct {
-    GLfloat a, b, c, d;
-    GLfloat e, f, g, h;
-    GLfloat i, j, k, l;
-    GLfloat m, n, o, p;
-  };
-  GLfloat gl[16];
+typedef struct {
+  GLfloat m11, m21, m31, m41;
+  GLfloat m12, m22, m32, m42;
+  GLfloat m13, m23, m33, m43;
+  GLfloat m14, m24, m34, m44;
 } GLmat4;
 ]]
 
 local M = require 'vector'
 
 local vec2, vec3, vec4 = M.vec2, M.vec3, M.vec4
+local glFloatp = ffi.typeof('GLfloat *')
 
 local mat2
 mat2 = ffi.metatype('GLmat2', {
@@ -61,15 +41,18 @@ mat2 = ffi.metatype('GLmat2', {
       return mat2(m.m11, m.m12,
                   m.m21, m.m22)
     elseif i == 'det' then
-      return m.a * m.d - m.b * m.c
+      return m.m11 * m.m22 - m.m21 * m.m12
     elseif i == 'inv' then
-      local det = m.a * m.d - m.b * m.c;
-      return mat2( m.d / det, -m.b / det,
-                  -m.c / det,  m.a / det)
+      local det = m.m11 * m.m22 - m.m21 * m.m12;
+      return mat2( m.m22 / det, -m.m21 / det,
+                  -m.m12 / det,  m.m11 / det)
+    elseif i == 'gl' then
+      return ffi.cast(glFloatp, m)
     end
     return nil
   end,
-  __tostring = function(m) return string.format("[%2.12g %2.12g]\n[%2.12g %2.12g]", m.a, m.b, m.c, m.d) end
+  __tostring = function(m) return string.format("[%2.12g %2.12g]\n[%2.12g %2.12g]",
+                                                   m.m11, m.m21,    m.m12, m.m22) end
 })
 local mat3
 mat3 = ffi.metatype('GLmat3', {
@@ -98,22 +81,24 @@ mat3 = ffi.metatype('GLmat3', {
                   m.m21, m.m22, m.m23,
                   m.m31, m.m32, m.m33)
     elseif i == 'det' then
-      return m.a * (m.e*m.k - m.f*m.h) +
-             m.b * (m.f*m.g - m.k*m.d) +
-             m.c * (m.d*m.h - m.e*m.g)
+      return m.m11 * (m.m22*m.m33 - m.m32*m.m23) +
+             m.m21 * (m.m32*m.m13 - m.m33*m.m12) +
+             m.m31 * (m.m12*m.m23 - m.m22*m.m13)
     elseif i == 'inv' then
-      local det = m.a * (m.e*m.k - m.f*m.h) +
-                  m.b * (m.f*m.g - m.k*m.d) +
-                  m.c * (m.d*m.h - m.e*m.g)
-      return mat3((m.e*m.k - m.f*m.h) / det, (m.c*m.h - m.b*m.k) / det, (m.b*m.f - m.c*m.e) / det,
-                  (m.f*m.g - m.d*m.k) / det, (m.a*m.k - m.c*m.g) / det, (m.c*m.d - m.a*m.f) / det,
-                  (m.d*m.h - m.e*m.g) / det, (m.g*m.b - m.a*m.h) / det, (m.a*m.e - m.b*m.d) / det)
+      local det = m.m11 * (m.m22*m.m33 - m.m32*m.m23) +
+                  m.m21 * (m.m32*m.m13 - m.m33*m.m12) +
+                  m.m31 * (m.m12*m.m23 - m.m22*m.m13)
+      return mat3((m.m22*m.m33 - m.m32*m.m23) / det, (m.m31*m.m23 - m.m21*m.m33) / det, (m.m21*m.m32 - m.m31*m.m22) / det,
+                  (m.m32*m.m13 - m.m12*m.m33) / det, (m.m11*m.m33 - m.m31*m.m13) / det, (m.m31*m.m12 - m.m11*m.m32) / det,
+                  (m.m12*m.m23 - m.m22*m.m13) / det, (m.m13*m.m21 - m.m11*m.m23) / det, (m.m11*m.m22 - m.m21*m.m12) / det)
+    elseif i == 'gl' then
+      return ffi.cast(glFloatp, m)
     end
     return nil
   end,
   __tostring = function(m)
     return string.format("[%2.12g %2.12g %2.12g]\n[%2.12g %2.12g %2.12g]\n[%2.12g %2.12g %2.12g]",
-                         m.a, m.b, m.c, m.d, m.e, m.f, m.g, m.h, m.k)
+                            m.m11, m.m21, m.m31,    m.m12, m.m22, m.m32,    m.m13, m.m23, m.m33)
     end
 })
 local mat4
@@ -171,41 +156,43 @@ mat4 = ffi.metatype('GLmat4', {
                   m.m41, m.m42, m.m43, m.m44)
      -- http://stackoverflow.com/questions/1148309/inverting-a-4x4-matrix
     elseif i == 'det' then
-      local i1 =  m.f*m.k*m.p - m.f*m.l*m.o - m.j*m.g*m.p + m.j*m.h*m.o + m.n*m.g*m.l - m.n*m.h*m.k
-      local i2 = -m.e*m.k*m.p + m.e*m.l*m.o + m.i*m.g*m.p - m.i*m.h*m.o - m.m*m.g*m.l + m.m*m.h*m.k
-      local i3 =  m.e*m.j*m.p - m.e*m.l*m.n - m.i*m.f*m.p + m.i*m.h*m.n + m.m*m.f*m.l - m.m*m.h*m.j
-      local i4 = -m.e*m.j*m.o + m.e*m.k*m.n + m.i*m.f*m.o - m.i*m.g*m.n - m.m*m.f*m.k + m.m*m.g*m.j
-      return m.a*i1 + m.b*i2 + m.c*i3 + m.d*i4
+      local i1 =  m.m22*m.m33*m.m44 - m.m22*m.m43*m.m34 - m.m23*m.m32*m.m44 + m.m23*m.m42*m.m34 + m.m24*m.m32*m.m43 - m.m24*m.m42*m.m33
+      local i2 = -m.m12*m.m33*m.m44 + m.m12*m.m43*m.m34 + m.m13*m.m32*m.m44 - m.m13*m.m42*m.m34 - m.m14*m.m32*m.m43 + m.m14*m.m42*m.m33
+      local i3 =  m.m12*m.m23*m.m44 - m.m12*m.m43*m.m24 - m.m13*m.m22*m.m44 + m.m13*m.m42*m.m24 + m.m14*m.m22*m.m43 - m.m14*m.m42*m.m23
+      local i4 = -m.m12*m.m23*m.m34 + m.m12*m.m33*m.m24 + m.m13*m.m22*m.m34 - m.m13*m.m32*m.m24 - m.m14*m.m22*m.m33 + m.m14*m.m32*m.m23
+      return m.m11*i1 + m.m21*i2 + m.m31*i3 + m.m41*i4
     elseif i == 'inv' then
       local inv = mat4(
-        m.f*m.k*m.p - m.f*m.l*m.o - m.j*m.g*m.p + m.j*m.h*m.o + m.n*m.g*m.l - m.n*m.h*m.k,
-       -m.b*m.k*m.p + m.b*m.l*m.o + m.j*m.c*m.p - m.j*m.d*m.o - m.n*m.c*m.l + m.n*m.d*m.k,
-        m.b*m.g*m.p - m.b*m.h*m.o - m.f*m.c*m.p + m.f*m.d*m.o + m.n*m.c*m.h - m.n*m.d*m.g,
-       -m.b*m.g*m.l + m.b*m.h*m.k + m.f*m.c*m.l - m.f*m.d*m.k - m.j*m.c*m.h + m.j*m.d*m.g,
-       -m.e*m.k*m.p + m.e*m.l*m.o + m.i*m.g*m.p - m.i*m.h*m.o - m.m*m.g*m.l + m.m*m.h*m.k,
-        m.a*m.k*m.p - m.a*m.l*m.o - m.i*m.c*m.p + m.i*m.d*m.o + m.m*m.c*m.l - m.m*m.d*m.k,
-       -m.a*m.g*m.p + m.a*m.h*m.o + m.e*m.c*m.p - m.e*m.d*m.o - m.m*m.c*m.h + m.m*m.d*m.g,
-        m.a*m.g*m.l - m.a*m.h*m.k - m.e*m.c*m.l + m.e*m.d*m.k + m.i*m.c*m.h - m.i*m.d*m.g,
-        m.e*m.j*m.p - m.e*m.l*m.n - m.i*m.f*m.p + m.i*m.h*m.n + m.m*m.f*m.l - m.m*m.h*m.j,
-       -m.a*m.j*m.p + m.a*m.l*m.n + m.i*m.b*m.p - m.i*m.d*m.n - m.m*m.b*m.l + m.m*m.d*m.j,
-        m.a*m.f*m.p - m.a*m.h*m.n - m.e*m.b*m.p + m.e*m.d*m.n + m.m*m.b*m.h - m.m*m.d*m.f,
-       -m.a*m.f*m.l + m.a*m.h*m.j + m.e*m.b*m.l - m.e*m.d*m.j - m.i*m.b*m.h + m.i*m.d*m.f,
-       -m.e*m.j*m.o + m.e*m.k*m.n + m.i*m.f*m.o - m.i*m.g*m.n - m.m*m.f*m.k + m.m*m.g*m.j,
-        m.a*m.j*m.o - m.a*m.k*m.n - m.i*m.b*m.o + m.i*m.c*m.n + m.m*m.b*m.k - m.m*m.c*m.j,
-       -m.a*m.f*m.o + m.a*m.g*m.n + m.e*m.b*m.o - m.e*m.c*m.n - m.m*m.b*m.g + m.m*m.c*m.f,
-        m.a*m.f*m.k - m.a*m.g*m.j - m.e*m.b*m.k + m.e*m.c*m.j + m.i*m.b*m.g - m.i*m.c*m.f)
-       local det = m.a*inv.a + m.b*inv.e + m.c*inv.i + m.d*inv.m
-       inv.a = inv.a / det; inv.b = inv.b / det; inv.c = inv.c / det; inv.d = inv.d / det
-       inv.e = inv.e / det; inv.f = inv.f / det; inv.g = inv.g / det; inv.h = inv.h / det
-       inv.i = inv.i / det; inv.j = inv.j / det; inv.k = inv.k / det; inv.l = inv.l / det
-       inv.m = inv.m / det; inv.n = inv.n / det; inv.o = inv.o / det; inv.p = inv.p / det
+        m.m22*m.m33*m.m44 - m.m22*m.m43*m.m34 - m.m23*m.m32*m.m44 + m.m23*m.m42*m.m34 + m.m24*m.m32*m.m43 - m.m24*m.m42*m.m33,
+       -m.m21*m.m33*m.m44 + m.m21*m.m43*m.m34 + m.m23*m.m31*m.m44 - m.m23*m.m41*m.m34 - m.m24*m.m31*m.m43 + m.m24*m.m41*m.m33,
+        m.m21*m.m32*m.m44 - m.m21*m.m42*m.m34 - m.m22*m.m31*m.m44 + m.m22*m.m41*m.m34 + m.m24*m.m31*m.m42 - m.m24*m.m41*m.m32,
+       -m.m21*m.m32*m.m43 + m.m21*m.m42*m.m33 + m.m22*m.m31*m.m43 - m.m22*m.m41*m.m33 - m.m23*m.m31*m.m42 + m.m23*m.m41*m.m32,
+       -m.m12*m.m33*m.m44 + m.m12*m.m43*m.m34 + m.m13*m.m32*m.m44 - m.m13*m.m42*m.m34 - m.m14*m.m32*m.m43 + m.m14*m.m42*m.m33,
+        m.m11*m.m33*m.m44 - m.m11*m.m43*m.m34 - m.m13*m.m31*m.m44 + m.m13*m.m41*m.m34 + m.m14*m.m31*m.m43 - m.m14*m.m41*m.m33,
+       -m.m11*m.m32*m.m44 + m.m11*m.m42*m.m34 + m.m12*m.m31*m.m44 - m.m12*m.m41*m.m34 - m.m14*m.m31*m.m42 + m.m14*m.m41*m.m32,
+        m.m11*m.m32*m.m43 - m.m11*m.m42*m.m33 - m.m12*m.m31*m.m43 + m.m12*m.m41*m.m33 + m.m13*m.m31*m.m42 - m.m13*m.m41*m.m32,
+        m.m12*m.m23*m.m44 - m.m12*m.m43*m.m24 - m.m13*m.m22*m.m44 + m.m13*m.m42*m.m24 + m.m14*m.m22*m.m43 - m.m14*m.m42*m.m23,
+       -m.m11*m.m23*m.m44 + m.m11*m.m43*m.m24 + m.m13*m.m21*m.m44 - m.m13*m.m41*m.m24 - m.m14*m.m21*m.m43 + m.m14*m.m41*m.m23,
+        m.m11*m.m22*m.m44 - m.m11*m.m42*m.m24 - m.m12*m.m21*m.m44 + m.m12*m.m41*m.m24 + m.m14*m.m21*m.m42 - m.m14*m.m41*m.m22,
+       -m.m11*m.m22*m.m43 + m.m11*m.m42*m.m23 + m.m12*m.m21*m.m43 - m.m12*m.m41*m.m23 - m.m13*m.m21*m.m42 + m.m13*m.m41*m.m22,
+       -m.m12*m.m23*m.m34 + m.m12*m.m33*m.m24 + m.m13*m.m22*m.m34 - m.m13*m.m32*m.m24 - m.m14*m.m22*m.m33 + m.m14*m.m32*m.m23,
+        m.m11*m.m23*m.m34 - m.m11*m.m33*m.m24 - m.m13*m.m21*m.m34 + m.m13*m.m31*m.m24 + m.m14*m.m21*m.m33 - m.m14*m.m31*m.m23,
+       -m.m11*m.m22*m.m34 + m.m11*m.m32*m.m24 + m.m12*m.m21*m.m34 - m.m12*m.m31*m.m24 - m.m14*m.m21*m.m32 + m.m14*m.m31*m.m22,
+        m.m11*m.m22*m.m33 - m.m11*m.m32*m.m23 - m.m12*m.m21*m.m33 + m.m12*m.m31*m.m23 + m.m13*m.m21*m.m32 - m.m13*m.m31*m.m22)
+       local det = m.m11*inv.m11 + m.m21*inv.m12 + m.m31*inv.m13 + m.m41*inv.m14
+       inv.m11 = inv.m11 / det; inv.m21 = inv.m21 / det; inv.m31 = inv.m31 / det; inv.m41 = inv.m41 / det
+       inv.m12 = inv.m12 / det; inv.m22 = inv.m22 / det; inv.m32 = inv.m32 / det; inv.m42 = inv.m42 / det
+       inv.m13 = inv.m13 / det; inv.m23 = inv.m23 / det; inv.m33 = inv.m33 / det; inv.m43 = inv.m43 / det
+       inv.m14 = inv.m14 / det; inv.m24 = inv.m24 / det; inv.m34 = inv.m34 / det; inv.m44 = inv.m44 / det
        return inv
+    elseif i == 'gl' then
+      return ffi.cast(glFloatp, m)
     end
     return nil
   end,
   __tostring = function(m)
     return string.format("[%2.12g %2.12g %2.12g %2.12g]\n[%2.12g %2.12g %2.12g %2.12g]\n[%2.12g %2.12g %2.12g %2.12g]\n[%2.12g %2.12g %2.12g %2.12g]",
-                         m.a, m.b, m.c, m.d, m.e, m.f, m.g, m.h, m.i, m.j, m.k, m.l, m.m, m.n, m.o, m.p)
+                            m.m11, m.m21, m.m31, m.m41,    m.m12, m.m22, m.m32, m.m42,    m.m13, m.m23, m.m33, m.m43,    m.m14, m.m24, m.m34, m.m44)
     end
 })
 
