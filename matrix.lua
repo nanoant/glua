@@ -209,67 +209,67 @@ mat4 = ffi.metatype('GLmat4', {
     end
 })
 
-local function glRotate2(r)
+local function rotate2(r)
   return mat2(cos(r), -sin(r),
               sin(r),  cos(r))
 end
-local function glRotate3x(r)
+local function rotate3x(r)
   return mat3(1,     0,       0,
               0, cos(r), -sin(r),
               0, sin(r),  cos(r))
 end
-local function glRotate3y(r)
+local function rotate3y(r)
   return mat3(cos(r), 0, sin(r),
                    0, 1,      0,
              -sin(r), 0, cos(r))
 end
-local function glRotate3z(r)
+local function rotate3z(r)
   return mat3(cos(r), -sin(r), 0,
               sin(r),  cos(r), 0,
                    0,       0, 1)
 end
-local function glRotate3(rx, ry, rz)
-  return glRotate3x(rx) * glRotate3y(ry) * glRotate3z(rz)
+local function rotate3(rx, ry, rz)
+  return rotate3x(rx) * rotate3y(ry) * rotate3z(rz)
 end
-local function glRotate4x(r)
+local function rotate4x(r)
   return mat4(1,     0,        0, 0,
               0, cos(r), -sin(r), 0,
               0, sin(r),  cos(r), 0,
               0,      0,       0, 1)
 end
-local function glRotate4y(r)
+local function rotate4y(r)
   return mat4(cos(r), 0, sin(r), 0,
                    0, 1,      0, 0,
              -sin(r), 0, cos(r), 0,
                    0, 0,      0, 1)
 end
-local function glRotate4z(r)
+local function rotate4z(r)
   return mat4(cos(r), -sin(r), 0, 0,
               sin(r),  cos(r), 0, 0,
                    0,       0, 1, 0,
                    0,       0, 0, 1)
 end
-local function glRotate4(rx, ry, rz)
-  return glRotate4x(rx) * glRotate4y(ry) * glRotate4z(rz)
+local function rotate4(rx, ry, rz)
+  return rotate4x(rx) * rotate4y(ry) * rotate4z(rz)
 end
 
 M.mat2 = mat2
 M.mat3 = mat3
 M.mat4 = mat4
 M.mat  = mat4
-M.Rotate2  = glRotate2
-M.Rotate3x = glRotate3x
-M.Rotate3y = glRotate3y
-M.Rotate3z = glRotate3z
-M.Rotate3  = glRotate3
-M.Rotate4x = glRotate4x
-M.Rotate4y = glRotate4y
-M.Rotate4z = glRotate4z
-M.Rotate4  = glRotate4
-M.Rotatex  = glRotate4x
-M.Rotatey  = glRotate4y
-M.Rotatez  = glRotate4z
-M.Rotate   = glRotate4
+M.rotate2  = rotate2
+M.rotate3x = rotate3x
+M.rotate3y = rotate3y
+M.rotate3z = rotate3z
+M.rotate3  = rotate3
+M.rotate4x = rotate4x
+M.rotate4y = rotate4y
+M.rotate4z = rotate4z
+M.rotate4  = rotate4
+M.rotatex  = rotate4x
+M.rotatey  = rotate4y
+M.rotatez  = rotate4z
+M.rotate   = rotate4
 M.identity2 = mat2(1, 0,
                    0, 1)
 M.identity3 = mat3(1, 0, 0,
@@ -281,7 +281,7 @@ M.identity4 = mat4(1, 0, 0, 0,
                    0, 0, 0, 1)
 M.identity = M.identity4
 
-function M.Translate(x, y, z)
+function M.translate(x, y, z)
   if ffi.istype(vec2, x) then
     y = x.y
     x = x.x
@@ -298,18 +298,18 @@ function M.Translate(x, y, z)
               0, 0, 0, 1)
 end
 
-function M.Frustum(l, r, b, t, n, f)
+function M.frustum(l, r, b, t, n, f)
   return mat4(2*n/(r-l),         0,  (r+l)/(r-l),            0,
                       0, 2*n/(t-b),  (t+b)/(t-b),            0,
                       0,         0, -(f+n)/(f-n), -2*n*f/(f-n),
                       0,         0,           -1,            0)
 end
-function M.Perspective(fovy, aspect, n, f)
+function M.perspective(fovy, aspect, n, f)
    local t = n * math.tan(fovy * math.pi / 360.0)
    local r = t * aspect
-   return M.Frustum(-r, r, -t, t, n, f)
+   return M.frustum(-r, r, -t, t, n, f)
 end
-function M.Ortho(l, r, b, t, n, f)
+function M.ortho(l, r, b, t, n, f)
   return mat4(2/(r-l),       0,        0, -(r+l)/(r-l),
                     0, 2/(t-b),        0, -(t+b)/(t-b),
                     0,       0, -2/(f-n), -(f+n)/(f-n),

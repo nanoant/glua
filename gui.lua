@@ -6,9 +6,9 @@ local ic    = iconv.open('UCS-2LE', 'UTF-8')
 
 local gui = {}
 
-local Font = {}
+local font = {}
 
-function gui:Font()
+function gui:font()
   self = self or {}
   self.font    = self.font   or ffi.os == 'OSX'     and '/System/Library/Fonts/LucidaGrande.ttc'
                              or ffi.os == 'Linux'   and '/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf'
@@ -20,7 +20,7 @@ function gui:Font()
   self.face    = ft.New_Face(self.font)
   self.map     = {}
   setmetatable(self, {
-    __index = Font,
+    __index = font,
     __gc = function(self)
       ft.Face_Done(self.face)
     end
@@ -43,11 +43,11 @@ function gui:Font()
   return self
 end
 
-function Font:resize(size)
+function font:resize(size)
   ft.Set_Char_Size(self.face, 0, size * 64, 0, 0)
 end
 
-function Font:glyphs(str)
+function font:glyphs(str)
   local ucs2, size = iconv.iconv(ic, str, true)
   local map = self.map
   local chars = {}
@@ -120,7 +120,7 @@ function Font:glyphs(str)
   return chars
 end
 
-function Font:array(program, str, width)
+function font:array(program, str, width)
   width = width or 1e20
   local glyphs = self:glyphs(str)
   local x = 0
@@ -181,7 +181,7 @@ function Font:array(program, str, width)
       x = x + glyph.advance
     end
   end
-  return gl.Array(program, attr, 'position', 3, 'texCoord', 2)
+  return gl.array(program, attr, 'position', 3, 'texCoord', 2)
 end
 
 return gui

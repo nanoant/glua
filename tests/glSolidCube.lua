@@ -18,9 +18,9 @@ local normalShader = {
   [gl.VERTEX_SHADER]   = 'shaders/normal.vert',
   [gl.FRAGMENT_SHADER] = 'shaders/normal.frag'
 }
-local colorShader = {
-  [gl.VERTEX_SHADER]   = 'shaders/color.vert',
-  [gl.FRAGMENT_SHADER] = 'shaders/color.frag'
+local guiShader = {
+  [gl.VERTEX_SHADER]   = 'shaders/gui.vert',
+  [gl.FRAGMENT_SHADER] = 'shaders/gui.frag'
 }
 local lights = {
   {
@@ -78,7 +78,7 @@ gl.Enable(gl.DEPTH_TEST)
 local textures = gl.Textures(textures)
 
 -- load shaders
-local normalProgram = gl.Program(normalShader)
+local normalProgram = gl.program(normalShader)
 gl.UseProgram(normalProgram.gl)
 
 -- set up lights
@@ -113,7 +113,7 @@ normalProgram.materialShininess = .2
 
 -- setup matrices
 local projection = gl.identity
-local view       = gl.Translate(0,0,-4)
+local view       = gl.translate(0,0,-4)
 local model      = gl.identity
 local light      = gl.identity
 
@@ -122,14 +122,14 @@ normalProgram.lightMatrix = light
 -- called upon window resize & creation
 gl.utReshapeFunc(function(w, h)
   width, height = w, h
-  projection = gl.Perspective(60, w / h, .1, 1000)
+  projection = gl.perspective(60, w / h, .1, 1000)
   gl.Viewport(0, 0, w, h)
 end)
 
 -- idle callbacks
 local frames, clock
 local rotateCallback = gl.utIdleCallback(function()
-  light = gl.Rotatey(.002) * light
+  light = gl.rotatey(.002) * light
   normalProgram.lightMatrix = light
   frames = frames + 1
   gl.utPostRedisplay()
@@ -139,7 +139,7 @@ end)
 gl.utMotionFunc(function(x, y)
   local left = buttons[gl.UT_LEFT_BUTTON]
   if left and left.state == gl.UT_DOWN then
-    model = gl.Rotate((y - left.y) * .007, (x - left.x) * .007, 0) * model
+    model = gl.rotate((y - left.y) * .007, (x - left.x) * .007, 0) * model
     left.x, left.y = x, y
     gl.utPostRedisplay()
   end
@@ -170,7 +170,7 @@ gl.utDisplayFunc(function()
   normalProgram.normalMatrix              = modelView.inv.t.mat3
 
   gl.Clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT)
-  gl.SolidCube(normalProgram)
+  gl.drawcube(normalProgram)
   gl.utSwapBuffers()
 end)
 

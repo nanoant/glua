@@ -34,19 +34,19 @@ gl.utInitWindowPosition(100, 100)
 
 -- create window & local mouse state variables
 local window = gl.utCreateWindow("Font")
-local font = gui.Font{ size = size, font = font }
+local font = gui.font{ size = size, font = font }
 local buttons = {}
 
 gl.ClearColor(1, 1, 1, 1)
 gl.Enable(gl.BLEND)
 gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 -- load shaders
-local guiProgram = gl.Program(guiShader)
+local guiProgram = gl.program(guiShader)
 gl.UseProgram(guiProgram.gl)
 gl.Uniform4f(guiProgram.color,    0, 0, 0, 1)
 
-local textArray, textSize
-local texArray, texSize = gl.Array(guiProgram, {
+local text
+local glyphs = gl.array(guiProgram, {
   256, 256, 0,   0,   0,
   768, 256, 0, 512,   0,
   768, 768, 0, 512, 512,
@@ -57,12 +57,12 @@ local texArray, texSize = gl.Array(guiProgram, {
 
 -- called upon window resize & creation
 gl.utReshapeFunc(function(w, h)
-  guiProgram.modelViewProjectionMatrix = gl.Ortho(0, w, h, 0, -1, 0)
+  guiProgram.modelViewProjectionMatrix = gl.ortho(0, w, h, 0, -1, 0)
   if textArray then
     gl.DeleteVertexArray(textArray)
   end
   gl.UseProgram(guiProgram.gl)
-  textArray, textSize = font:array(guiProgram, lorem, w)
+  text = font:array(guiProgram, lorem, w)
   gl.Viewport(0, 0, w, h)
 end)
 
@@ -94,11 +94,11 @@ gl.utDisplayFunc(function()
   gl.Clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT)
   guiProgram.color = {0, 0, 1, 1}
   guiProgram.alphaMask = true
-  gl.BindVertexArray(textArray)
-  gl.DrawArrays(gl.TRIANGLES, 0, textSize)
-  gl.BindVertexArray(texArray)
+  gl.BindVertexArray(text.gl)
+  gl.DrawArrays(gl.TRIANGLES, 0, text.size)
+  gl.BindVertexArray(glyphs.gl)
   guiProgram.color = {1, 0, 0, .5}
-  gl.DrawArrays(gl.TRIANGLES, 0, texSize)
+  gl.DrawArrays(gl.TRIANGLES, 0, glyphs.size)
   gl.utSwapBuffers()
 end)
 

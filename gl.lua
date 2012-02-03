@@ -343,7 +343,7 @@ function gl.GetProgramInfoLog(program)
   gl.GetProgramInfoLog(program, logSize+1, logSizep, log)
   return ffi.string(constCharp)
 end
-local Program = {
+local programMT = {
   __index = function(program, uniform)
     local location = program.locations[uniform]
     if location == nil then
@@ -370,7 +370,7 @@ local Program = {
     gl.DeleteProgram(program.gl)
   end
 }
-function gl.Program(shaderPaths)
+function gl.program(shaderPaths)
   local program = gl.CreateProgram()
   for type, path in pairs(shaderPaths) do
     local f = assert(io.open(path, 'rb'))
@@ -394,7 +394,7 @@ function gl.Program(shaderPaths)
   if not gl.GetProgram(program, gl.LINK_STATUS) then
     error(gl.GetProgramInfoLog(program))
   end
-  return setmetatable({ gl = program, locations = {} }, Program)
+  return setmetatable({ gl = program, locations = {} }, programMT)
 end
 
 -- TEXTURES ------------------------------------------------------------------
@@ -517,18 +517,7 @@ function gl.DeleteVertexArray(...)
     if e ~= 0 then error(glErrorMap[e] or e) end
   end
 end
-function gl.Array(program, data, ...)
-  local array = gl.GenVertexArray()
-  if type(program) == 'table' then program = program.gl end
-  gl.BindVertexArray(array)
-  local buf  = gl.GenBuffer()
-  local size = ffi.sizeof(glFloatv, #data)
-  local ptr  = glFloatv(#data, data)
-  gl.BindBuffer(gl.ARRAY_BUFFER, buf)
-  gl.BufferData(gl.ARRAY_BUFFER, size, ptr, gl.STATIC_DRAW)
-  return array, math.floor(#data / gl.LoadArray(program, glFloatp(nil), ...))
-end
-function gl.LoadArray(program, ptr, ...)
+local function glLoadArray(program, ptr, ...)
   local attr = {}
   local vertexSize = 0
   for i = 1, select('#', ...), 2 do
@@ -551,17 +540,28 @@ function gl.LoadArray(program, ptr, ...)
   end
   return totalSize
 end
-function gl.DrawArray(program, data, ...)
+function gl.array(program, data, ...)
+  local array = gl.GenVertexArray()
   if type(program) == 'table' then program = program.gl end
-  gl.DrawArrays(gl.TRIANGLES, 0, math.floor(#data / gl.LoadArray(program, glFloatv(#data, data), ...)))
+  gl.BindVertexArray(array)
+  local buf  = gl.GenBuffer()
+  local size = ffi.sizeof(glFloatv, #data)
+  local ptr  = glFloatv(#data, data)
+  gl.BindBuffer(gl.ARRAY_BUFFER, buf)
+  gl.BufferData(gl.ARRAY_BUFFER, size, ptr, gl.STATIC_DRAW)
+  return { gl = array, size = math.floor(#data / glLoadArray(program, glFloatp(nil), ...)) }
+end
+function gl.draw(program, mode, data, ...)
+  if type(program) == 'table' then program = program.gl end
+  gl.DrawArrays(gl.TRIANGLES, 0, math.floor(#data / glLoadArray(program, glFloatv(#data, data), ...)))
 end
 
 -- MODELS --------------------------------------------------------------------
 
-function gl.PlaneArray(program) return gl.Array    (program, gl.plane, 'position', 3, 'normal', 3, 'texCoord', 2) end
-function gl.CubeArray(program)  return gl.Array    (program, gl.cube,  'position', 3, 'normal', 3, 'texCoord', 2) end
-function gl.SolidPlane(program) return gl.DrawArray(program, gl.plane, 'position', 3, 'normal', 3, 'texCoord', 2) end
-function gl.SolidCube(program)  return gl.DrawArray(program, gl.cube,  'position', 3, 'normal', 3, 'texCoord', 2) end
+function gl.plane(program) return gl.array(program, gl.plane, 'position', 3, 'normal', 3, 'texCoord', 2) end
+function gl.cube(program)  return gl.array(program, gl.cube,  'position', 3, 'normal', 3, 'texCoord', 2) end
+function gl.drawplane(program, mode) mode = mode or gl.TRIANGLES; return gl.draw(program, mode, gl.plane, 'position', 3, 'normal', 3, 'texCoord', 2) end
+function gl.drawcube(program, mode)  mode = mode or gl.TRIANGLES; return gl.draw(program, mode, gl.cube,  'position', 3, 'normal', 3, 'texCoord', 2) end
 gl.plane = {
   -- vertex  -- normal -- tex coord
   -1, -1,  0,   0,  0,  1,   1, 1,
