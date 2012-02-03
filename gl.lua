@@ -343,33 +343,9 @@ function gl.GetProgramInfoLog(program)
   gl.GetProgramInfoLog(program, logSize+1, logSizep, log)
   return ffi.string(constCharp)
 end
-local programMT = {
-  __index = function(program, uniform)
-    local location = program.locations[uniform]
-    if location == nil then
-      location = gl.GetUniformLocation(program.gl, uniform)
-      program.locations[uniform] = location
-    end
-    return location
-  end,
-  __newindex = function(program, uniform, value)
-    local location = program[uniform]
-    if ffi.istype(gl.mat4, value) then
-      gl.UniformMatrix4fv(location,  1, gl.TRUE, value.gl)
-    elseif ffi.istype(gl.mat3, value) then
-      gl.UniformMatrix3fv(location,  1, gl.TRUE, value.gl)
-    elseif ffi.istype(gl.mat2, value) then
-      gl.UniformMatrix2fv(location,  1, gl.TRUE, value.gl)
-    elseif type(value) == 'table' then
-      gl['Uniform'..#value..'f'](location, unpack(value))
-    else
-      gl.Uniform1f(location, value)
-    end
-  end,
-  __gc = function(program)
-    gl.DeleteProgram(program.gl)
-  end
-}
+
+local program = {}
+local programMT = {}
 function gl.program(shaderPaths)
   local program = gl.CreateProgram()
   for type, path in pairs(shaderPaths) do
@@ -397,6 +373,38 @@ function gl.program(shaderPaths)
   return setmetatable({ gl = program, locations = {} }, programMT)
 end
 
+function programMT.__index(program, uniform)
+  local location = program.locations[uniform]
+  if location == nil then
+    location = gl.GetUniformLocation(program.gl, uniform)
+    program.locations[uniform] = location
+  end
+  return location
+end
+
+function programMT.__newindex(program, uniform, value)
+  local location = program[uniform]
+  if ffi.istype(gl.mat4, value) then
+    gl.UniformMatrix4fv(location,  1, gl.TRUE, value.gl)
+  elseif ffi.istype(gl.mat3, value) then
+    gl.UniformMatrix3fv(location,  1, gl.TRUE, value.gl)
+  elseif ffi.istype(gl.mat2, value) then
+    gl.UniformMatrix2fv(location,  1, gl.TRUE, value.gl)
+  elseif type(value) == 'table' then
+    gl['Uniform'..#value..'f'](location, unpack(value))
+  else
+    gl.Uniform1f(location, value)
+  end
+end
+
+function programMT.__gc(program)
+  gl.DeleteProgram(program.gl)
+end
+
+function programMT.__call(program)
+  gl.UseProgram(program.gl)
+end
+
 -- TEXTURES ------------------------------------------------------------------
 
 function gl.GenTextures(num, out)
@@ -416,30 +424,48 @@ local glTextureStorageMap = {
   [3] = gl.RGB,
   [4] = gl.RGBA
 }
-function gl.Textures(texturePaths)
-  local textures = gl.GenTextures(#texturePaths)
-  for target, path in pairs(texturePaths) do
-    local texture = textures[target] -- zero indexed
-    local data, width, height, channels = imglib.Bitmap(path)
-    if data then
-      local storage = glTextureStorageMap[channels]
-      gl.ActiveTexture(gl.TEXTURE0 + target)
-      gl.BindTexture(gl.TEXTURE_2D, texture)
-      gl.TexImage2D(gl.TEXTURE_2D,
-                    0,                  -- level
-                    storage,            -- internal texture storage format
-                    width,              -- texture width
-                    height,             -- texture height
-                    0,                  -- border
-                    storage,            -- pixel format
-                    gl.UNSIGNED_BYTE,   -- color component format
-                    data)               -- pointer to texture image
-      gl.GenerateMipmap(gl.TEXTURE_2D)
-      gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-      gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-    end
+
+local texture = {}
+local textureMT = { __index = texture }
+
+function gl.texture(path, target)
+  local data, width, height, channels = imglib.Bitmap(path)
+  if data then
+    local storage = glTextureStorageMap[channels]
+    local texture = gl.GenTexture()
+    if target then gl.ActiveTexture(gl.TEXTURE0 + target) end
+    gl.BindTexture(gl.TEXTURE_2D, texture)
+    gl.TexImage2D(gl.TEXTURE_2D,
+                  0,                  -- level
+                  storage,            -- internal texture storage format
+                  width,              -- texture width
+                  height,             -- texture height
+                  0,                  -- border
+                  storage,            -- pixel format
+                  gl.UNSIGNED_BYTE,   -- color component format
+                  data)               -- pointer to texture image
+    gl.GenerateMipmap(gl.TEXTURE_2D)
+    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    return setmetatable({ gl = texture, target = target }, textureMT)
   end
-  return textures
+  return nil
+end
+
+function textureMT.__gc(texture)
+  gl.DeleteTexture(texture.gl)
+end
+
+function textureMT.__call(texture, target)
+  if target then gl.ActiveTexture(gl.TEXTURE0 + target) end
+  gl.BindTexture(texture.gl)
+end
+
+function gl.textures(paths)
+  local textures = {}
+  for target, path in pairs(paths) do
+    textures[#textures+1] = gl.texture(path, target)
+  end
 end
 
 -- BUFFERS -------------------------------------------------------------------
@@ -523,9 +549,17 @@ local function glLoadArray(program, ptr, ...)
   for i = 1, select('#', ...), 2 do
     local location = select(i, ...)
     local size     = select(i+1, ...) or 3
-    if type(location) == 'string' then location = gl.GetAttribLocation(program, location) end
-    attr[#attr+1] = { location = location, size = size }
-    vertexSize = vertexSize + size
+    if type(location) == 'string' then
+      if program then
+        location = gl.GetAttribLocation(program, location)
+      else
+        location = i - 1 -- called without the program, just assume location is param index
+      end
+    end
+    if location >= 0 then
+      attr[#attr+1] = { location = location, size = size }
+      vertexSize = vertexSize + size
+    end
   end
   if #attr == 0 then
     attr[#attr+1] = { location = 0, size = 3 }
@@ -540,81 +574,38 @@ local function glLoadArray(program, ptr, ...)
   end
   return totalSize
 end
+
+local array = {}
+local arrayMT = {}
+
 function gl.array(program, data, ...)
   local array = gl.GenVertexArray()
-  if type(program) == 'table' then program = program.gl end
+  local glProgram = type(program) == 'table' and program.gl or program
   gl.BindVertexArray(array)
   local buf  = gl.GenBuffer()
   local size = ffi.sizeof(glFloatv, #data)
   local ptr  = glFloatv(#data, data)
   gl.BindBuffer(gl.ARRAY_BUFFER, buf)
   gl.BufferData(gl.ARRAY_BUFFER, size, ptr, gl.STATIC_DRAW)
-  return { gl = array, size = math.floor(#data / glLoadArray(program, glFloatp(nil), ...)) }
+  return setmetatable({ program = program, gl = array, size = math.floor(#data / glLoadArray(glProgram, glFloatp(nil), ...)) }, arrayMT)
 end
+
 function gl.draw(program, mode, data, ...)
-  if type(program) == 'table' then program = program.gl end
-  gl.DrawArrays(gl.TRIANGLES, 0, math.floor(#data / glLoadArray(program, glFloatv(#data, data), ...)))
+  local glProgram = type(program) == 'table' and program.gl or program
+  gl.BindVertexArray(0)
+  gl.DrawArrays(gl.TRIANGLES, 0, math.floor(#data / glLoadArray(glProgram, glFloatv(#data, data), ...)))
 end
 
--- MODELS --------------------------------------------------------------------
+function arrayMT.__gc(array)
+  gl.DeleteVertexArray(array.gl)
+end
 
-function gl.plane(program) return gl.array(program, gl.plane, 'position', 3, 'normal', 3, 'texCoord', 2) end
-function gl.cube(program)  return gl.array(program, gl.cube,  'position', 3, 'normal', 3, 'texCoord', 2) end
-function gl.drawplane(program, mode) mode = mode or gl.TRIANGLES; return gl.draw(program, mode, gl.plane, 'position', 3, 'normal', 3, 'texCoord', 2) end
-function gl.drawcube(program, mode)  mode = mode or gl.TRIANGLES; return gl.draw(program, mode, gl.cube,  'position', 3, 'normal', 3, 'texCoord', 2) end
-gl.plane = {
-  -- vertex  -- normal -- tex coord
-  -1, -1,  0,   0,  0,  1,   1, 1,
-   1, -1,  0,   0,  0,  1,   0, 1,
-   1,  1,  0,   0,  0,  1,   0, 0,
-   1,  1,  0,   0,  0,  1,   0, 0, -- dup
-  -1,  1,  0,   0,  0,  1,   1, 0,
-  -1, -1,  0,   0,  0,  1,   1, 1, -- dup
-}
-gl.cube = {
-  -- position,  normal,      tex coord
-  -- front
-  -1, -1,  1,   0,  0,  1,   1, 1,
-   1, -1,  1,   0,  0,  1,   0, 1,
-   1,  1,  1,   0,  0,  1,   0, 0,
-   1,  1,  1,   0,  0,  1,   0, 0, -- dup
-  -1,  1,  1,   0,  0,  1,   1, 0,
-  -1, -1,  1,   0,  0,  1,   1, 1, -- dup
-  -- back
-   1, -1, -1,   0,  0, -1,   1, 1,
-  -1, -1, -1,   0,  0, -1,   0, 1,
-  -1,  1, -1,   0,  0, -1,   0, 0,
-  -1,  1, -1,   0,  0, -1,   0, 0, -- dup
-   1,  1, -1,   0,  0, -1,   1, 0,
-   1, -1, -1,   0,  0, -1,   1, 1, -- dup
-  -- top
-   1,  1, -1,   0,  1,  0,   1, 1,
-  -1,  1, -1,   0,  1,  0,   0, 1,
-  -1,  1,  1,   0,  1,  0,   0, 0,
-  -1,  1,  1,   0,  1,  0,   0, 0, -- dup
-   1,  1,  1,   0,  1,  0,   1, 0,
-   1,  1, -1,   0,  1,  0,   1, 1, -- dup
-  -- bottom
-  -1, -1, -1,   0, -1,  0,   1, 1,
-   1, -1, -1,   0, -1,  0,   0, 1,
-   1, -1,  1,   0, -1,  0,   0, 0,
-   1, -1,  1,   0, -1,  0,   0, 0, -- dup
-  -1, -1,  1,   0, -1,  0,   1, 0,
-  -1, -1, -1,   0, -1,  0,   1, 1, -- dup
-  -- left
-  -1, -1, -1,  -1,  0,  0,   1, 1,
-  -1, -1,  1,  -1,  0,  0,   0, 1,
-  -1,  1,  1,  -1,  0,  0,   0, 0,
-  -1,  1,  1,  -1,  0,  0,   0, 0, -- dup
-  -1,  1, -1,  -1,  0,  0,   1, 0,
-  -1, -1, -1,  -1,  0,  0,   1, 1, -- dup
-  -- right
-   1, -1,  1,   1,  0,  0,   1, 1,
-   1, -1, -1,   1,  0,  0,   0, 1,
-   1,  1, -1,   1,  0,  0,   0, 0,
-   1,  1, -1,   1,  0,  0,   0, 0, -- dup
-   1,  1,  1,   1,  0,  0,   1, 0,
-   1, -1,  1,   1,  0,  0,   1, 1  -- dup
-}
+function arrayMT.__call(array, mode, from, size)
+  mode = mode or gl.TRIANGLES
+  from = from or 0
+  size = size or array.size
+  gl.BindVertexArray(array.gl)
+  gl.DrawArrays(mode, from, size)
+end
 
 return gl

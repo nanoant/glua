@@ -13,7 +13,7 @@ local guiShader = {
 }
 
 -- initialize display (note: glut module calls glutInit)
-local core = true
+local core = false
 for i = 1, #arg do
   if     arg[i]:match('^--compat$') then core = false
   elseif arg[i]:match('^--help$')   then
@@ -42,18 +42,19 @@ gl.Enable(gl.BLEND)
 gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 -- load shaders
 local guiProgram = gl.program(guiShader)
-gl.UseProgram(guiProgram.gl)
+guiProgram()
 gl.Uniform4f(guiProgram.color,    0, 0, 0, 1)
 
 local text
-local glyphs = gl.array(guiProgram, {
+local quad = {
   256, 256, 0,   0,   0,
   768, 256, 0, 512,   0,
   768, 768, 0, 512, 512,
   768, 768, 0, 512, 512, -- dup
   256, 768, 0,   0, 512,
   256, 256, 0,   0,   0, -- dup
-}, 'position', 3, 'texCoord', 2)
+}
+local glyphs = gl.array(guiProgram, quad, 'position', 3, 'texCoord', 2)
 
 -- called upon window resize & creation
 gl.utReshapeFunc(function(w, h)
@@ -61,7 +62,6 @@ gl.utReshapeFunc(function(w, h)
   if textArray then
     gl.DeleteVertexArray(textArray)
   end
-  gl.UseProgram(guiProgram.gl)
   text = font:array(guiProgram, lorem, w)
   gl.Viewport(0, 0, w, h)
 end)
@@ -94,11 +94,9 @@ gl.utDisplayFunc(function()
   gl.Clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT)
   guiProgram.color = {0, 0, 1, 1}
   guiProgram.alphaMask = true
-  gl.BindVertexArray(text.gl)
-  gl.DrawArrays(gl.TRIANGLES, 0, text.size)
-  gl.BindVertexArray(glyphs.gl)
+  text()
   guiProgram.color = {1, 0, 0, .5}
-  gl.DrawArrays(gl.TRIANGLES, 0, glyphs.size)
+  glyphs()
   gl.utSwapBuffers()
 end)
 

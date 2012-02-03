@@ -6,7 +6,8 @@ local ic    = iconv.open('UCS-2LE', 'UTF-8')
 
 local gui = {}
 
-local font = {}
+local font   = {}
+local fontMT = { __index = font }
 
 function gui:font()
   self = self or {}
@@ -19,12 +20,7 @@ function gui:font()
   -- load font
   self.face    = ft.New_Face(self.font)
   self.map     = {}
-  setmetatable(self, {
-    __index = font,
-    __gc = function(self)
-      ft.Face_Done(self.face)
-    end
-  })
+  setmetatable(self, fontMT)
   self:resize(self.size)
   -- setup texture
   self.x         = 0
@@ -41,6 +37,15 @@ function gui:font()
   end
   gl.TexImage2D(gl.TEXTURE_RECTANGLE, 0, format, self.texdim, self.texdim, 0, format, gl.UNSIGNED_BYTE, nil)
   return self
+end
+
+function fontMT:__gc(self)
+  ft.Face_Done(self.face)
+  gl.DeleteTexture(self.texture)
+end
+
+function fontMT:__call(self)
+  gl.BindTexture(self.texture)
 end
 
 function font:resize(size)

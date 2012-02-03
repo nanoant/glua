@@ -5,8 +5,9 @@
 --
 -- Usage: Use left mouse button to rotate cube, right mouse button to rotate lights
 
-local gl  = require 'gl'
-local gui = require 'gui'
+local gl        = require 'gl'
+local gui       = require 'gui'
+local primitive = require 'primitive'
 
 -- http://www.tutorialsforblender3d.com/Textures/Bricks-NormalMap/Bricks_Normal_1.html
 -- http://www.tutorialsforblender3d.com/Textures/Wall-NormalMap/Wall_Normal_1.html
@@ -44,7 +45,7 @@ local lights = {
 }
 
 -- initialize display (note: glut module calls glutInit)
-local core = false
+local core = true
 for i = 1, #arg do
   if     arg[i]:match('^--compat$') then core = false
   elseif arg[i]:match('^--help$')   then
@@ -75,11 +76,11 @@ gl.Enable(gl.CULL_FACE)
 gl.Enable(gl.DEPTH_TEST)
 
 -- set up textures
-local textures = gl.Textures(textures)
+local textures = gl.textures(textures)
 
 -- load shaders
 local normalProgram = gl.program(normalShader)
-gl.UseProgram(normalProgram.gl)
+normalProgram()
 
 -- set up lights
 gl.Uniform1i(normalProgram.numLights, #lights)
@@ -109,7 +110,7 @@ normalProgram.materialSpecular  = {1,  1,  1 }
 normalProgram.materialShininess = .2
 
 -- load solid cube
--- local cubeArray, cubeSize = gl.CubeArray(normalProgram)
+local cube = primitive.cube(normalProgram)
 
 -- setup matrices
 local projection = gl.identity
@@ -170,7 +171,7 @@ gl.utDisplayFunc(function()
   normalProgram.normalMatrix              = modelView.inv.t.mat3
 
   gl.Clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT)
-  gl.drawcube(normalProgram)
+  cube()
   gl.utSwapBuffers()
 end)
 
