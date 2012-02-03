@@ -9,11 +9,9 @@
 
 uniform int numLights;
 
-uniform mat4 projectionMatrix;
 uniform mat4 lightMatrix;
 uniform mat4 modelViewMatrix;
 uniform mat4 modelViewProjectionMatrix;
-uniform mat3 normalMatrix;
 
 uniform vec3 lightPosition[MAX_LIGHTS];
 
@@ -46,8 +44,10 @@ void main()
 	gl_Position = modelViewProjectionMatrix * vec4(position, 1);
 
 	// http://www.ozone3d.net/tutorials/bump_mapping_p4.php
-	vec3 n = normalMatrix * normal;
-	vec3 t = normalize(normalMatrix * tangent());
+	// we do not use non-uniform scaling, so we can use modelViewMatrix directly
+	// instead inverse-transpose
+	vec3 n = mat3(modelViewMatrix) * normal;
+	vec3 t = normalize(mat3(modelViewMatrix) * tangent());
 	vec3 b = cross(n, t);
 
 	vec3 vertex = vec3(modelViewMatrix * vec4(position, 1));
