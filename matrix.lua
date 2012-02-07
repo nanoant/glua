@@ -1,6 +1,7 @@
 local ffi  = require 'ffi'
 local gl   = require 'gl.gl3'
 local math = require 'math'
+local bit  = require 'bit'
 local sin, cos = math.sin, math.cos
 
 ffi.cdef [[
@@ -109,39 +110,47 @@ mat4 = ffi.metatype('GLmat4', {
   __mul = function(a, b)
     if not ffi.istype(mat4, a) then a, b = b, a end
     if ffi.istype(mat4, b) then
-      return mat4(a.m11*b.m11 + a.m21*b.m12 + a.m31*b.m13 + a.m41*b.m14,
-                  a.m11*b.m21 + a.m21*b.m22 + a.m31*b.m23 + a.m41*b.m24,
-                  a.m11*b.m31 + a.m21*b.m32 + a.m31*b.m33 + a.m41*b.m34,
-                  a.m11*b.m41 + a.m21*b.m42 + a.m31*b.m43 + a.m41*b.m44,
-
-                  a.m12*b.m11 + a.m22*b.m12 + a.m32*b.m13 + a.m42*b.m14,
-                  a.m12*b.m21 + a.m22*b.m22 + a.m32*b.m23 + a.m42*b.m24,
-                  a.m12*b.m31 + a.m22*b.m32 + a.m32*b.m33 + a.m42*b.m34,
-                  a.m12*b.m41 + a.m22*b.m42 + a.m32*b.m43 + a.m42*b.m44,
-
-                  a.m13*b.m11 + a.m23*b.m12 + a.m33*b.m13 + a.m43*b.m14,
-                  a.m13*b.m21 + a.m23*b.m22 + a.m33*b.m23 + a.m43*b.m24,
-                  a.m13*b.m31 + a.m23*b.m32 + a.m33*b.m33 + a.m43*b.m34,
-                  a.m13*b.m41 + a.m23*b.m42 + a.m33*b.m43 + a.m43*b.m44,
-
-                  a.m14*b.m11 + a.m24*b.m12 + a.m34*b.m13 + a.m44*b.m14,
-                  a.m14*b.m21 + a.m24*b.m22 + a.m34*b.m23 + a.m44*b.m24,
-                  a.m14*b.m31 + a.m24*b.m32 + a.m34*b.m33 + a.m44*b.m34,
-                  a.m14*b.m41 + a.m24*b.m42 + a.m34*b.m43 + a.m44*b.m44)
+      local ret = mat4()
+      local r = ffi.cast(glFloatp, ret)
+      local a = ffi.cast(glFloatp, a)
+      local b = ffi.cast(glFloatp, b)
+      -- Cramer's Rule
+      -- http://fhtr.blogspot.com/2010/02/4x4-float-matrix-multiplication-using.html
+      for i = 0, 15, 4 do
+        for j = 0, 3 do
+          r[i+j] = b[i]*a[j] + b[i+1]*a[j+4] + b[i+2]*a[j+8] + b[i+3]*a[j+12]
+        end
+      end
+      return ret
     elseif ffi.istype(vec4, b) then
-      return vec4(a.m11*b.x + a.m21*b.y + a.m31*b.z + a.m41*b.w,
-                  a.m12*b.x + a.m22*b.y + a.m32*b.z + a.m42*b.w,
-                  a.m13*b.x + a.m23*b.y + a.m33*b.z + a.m43*b.w,
-                  a.m14*b.x + a.m24*b.y + a.m34*b.z + a.m44*b.w)
+      local ret = vec4()
+      local r = ffi.cast(glFloatp, ret)
+      local a = ffi.cast(glFloatp, a)
+      local b = ffi.cast(glFloatp, b)
+      -- unrolling:
+      -- for i = 0, 3 do
+      --   r[i] = b[i]*a[4*i] + b[i+1]*a[4*i+1] + b[i+2]*a[4*i+2] + b[i+3]*a[4*i+3]
+      -- end
+      r[0] = b[0]*a[0]  + b[1]*a[1]  + b[2]*a[2]  + b[3]*a[3]
+      r[1] = b[0]*a[4]  + b[1]*a[5]  + b[2]*a[6]  + b[3]*a[9]
+      r[2] = b[0]*a[8]  + b[1]*a[9]  + b[2]*a[10] + b[3]*a[11]
+      r[3] = b[0]*a[12] + b[1]*a[13] + b[2]*a[14] + b[3]*a[15]
+      return ret
     elseif ffi.istype(vec3, b) then
       return vec3(a.m11*b.x + a.m21*b.y + a.m31*b.z + a.m41,
                   a.m12*b.x + a.m22*b.y + a.m32*b.z + a.m42,
                   a.m13*b.x + a.m23*b.y + a.m33*b.z + a.m43)
     end
-    return mat4(a.m11 * b, a.m21 * b, a.m31 * b, a.m41 * b,
-                a.m12 * b, a.m22 * b, a.m32 * b, a.m42 * b,
-                a.m13 * b, a.m23 * b, a.m33 * b, a.m43 * b,
-                a.m14 * b, a.m24 * b, a.m34 * b, a.m44 * b)
+    local ret = mat4()
+    local r = ffi.cast(glFloatp, ret)
+    local a = ffi.cast(glFloatp, a)
+    -- unrolling:
+    -- for i = 0, 15 do r[i] = a[i]*b end
+    r[0]  = a[0]*b;  r[1]  = a[1]*b;  r[2]  = a[2]*b;  r[3]  = a[3]*b
+    r[4]  = a[4]*b;  r[5]  = a[5]*b;  r[6]  = a[6]*b;  r[7]  = a[7]*b
+    r[8]  = a[8]*b;  r[9]  = a[9]*b;  r[10] = a[10]*b; r[11] = a[11]*b
+    r[12] = a[12]*b; r[13] = a[13]*b; r[14] = a[14]*b; r[15] = a[15]*b
+    return ret
   end,
   __index = function(m, i)
     if i == 'mat3' then
