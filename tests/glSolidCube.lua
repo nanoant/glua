@@ -165,19 +165,14 @@ end)
 -- main drawing function
 gl.utDisplayFunc(function ()
   gl.Clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT)
-  local start  = os.clock()
-  local modelView = view * model
-  normalProgram.modelViewMatrix           = modelView
-  normalProgram.modelViewProjectionMatrix = projection * modelView
-  cube()
-  -- for y = -10, 10 do
-  --   for x = -10, 10 do
-  --     -- local modelView = view * model * gl.translate(x * 2, y * 2, 0)
-  --     -- normalProgram.modelViewMatrix           = modelView
-  --     -- normalProgram.modelViewProjectionMatrix = projection * modelView
-  --     cube()
-  --   end
-  -- end
+  for y = -10, 10 do
+    for x = -10, 10 do
+      local modelView = view * model * gl.translate(x * 2, y * 2, 0)
+      normalProgram.modelViewMatrix           = modelView
+      normalProgram.modelViewProjectionMatrix = projection * modelView
+      cube()
+    end
+  end
   gl.utSwapBuffers()
 end)
 
