@@ -29,3 +29,24 @@ for i = 1, iter do
   a = a * b
 end
 print(string.format('matrix * matrix   in %f seconds', os.clock()-start)); io.stdout:flush()
+-- print(a)
+
+-- matrix transpose
+local a = gl.identity
+local b = gl.translate(0,0,-.001)
+local start = os.clock()
+for i = 1, iter do
+  a = a.t
+end
+print(string.format('matrix transpose  in %f seconds', os.clock()-start)); io.stdout:flush()
+-- print(a)
+
+-- matrix inverse
+local a = gl.identity
+local b = gl.translate(0,0,-.001)
+local start = os.clock()
+for i = 1, iter do
+  a = a.inv
+end
+print(string.format('matrix inverse    in %f seconds', os.clock()-start)); io.stdout:flush()
+-- print(a)

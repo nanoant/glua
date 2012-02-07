@@ -114,12 +114,16 @@ mat4 = ffi.metatype('GLmat4', {
       local r = ffi.cast(glFloatp, ret)
       local a = ffi.cast(glFloatp, a)
       local b = ffi.cast(glFloatp, b)
-      -- Cramer's Rule
-      -- http://fhtr.blogspot.com/2010/02/4x4-float-matrix-multiplication-using.html
+      -- NOTE: further unrolling does not bring performance benefit
       for i = 0, 15, 4 do
-        for j = 0, 3 do
-          r[i+j] = b[i]*a[j] + b[i+1]*a[j+4] + b[i+2]*a[j+8] + b[i+3]*a[j+12]
-        end
+        -- unrolling:
+        -- for j = 0, 3 do
+        --   r[i+j] = b[i]*a[j] + b[i+1]*a[j+4] + b[i+2]*a[j+8] + b[i+3]*a[j+12]
+        -- end
+        r[i]   = b[i]*a[0] + b[i+1]*a[4] + b[i+2]*a[8]  + b[i+3]*a[12]
+        r[i+1] = b[i]*a[1] + b[i+1]*a[5] + b[i+2]*a[9]  + b[i+3]*a[13]
+        r[i+2] = b[i]*a[2] + b[i+1]*a[6] + b[i+2]*a[10] + b[i+3]*a[14]
+        r[i+3] = b[i]*a[3] + b[i+1]*a[7] + b[i+2]*a[11] + b[i+3]*a[15]
       end
       return ret
     elseif ffi.istype(vec4, b) then
@@ -137,9 +141,14 @@ mat4 = ffi.metatype('GLmat4', {
       r[3] = b[0]*a[12] + b[1]*a[13] + b[2]*a[14] + b[3]*a[15]
       return ret
     elseif ffi.istype(vec3, b) then
-      return vec3(a.m11*b.x + a.m21*b.y + a.m31*b.z + a.m41,
-                  a.m12*b.x + a.m22*b.y + a.m32*b.z + a.m42,
-                  a.m13*b.x + a.m23*b.y + a.m33*b.z + a.m43)
+      local ret = vec3()
+      local r = ffi.cast(glFloatp, ret)
+      local a = ffi.cast(glFloatp, a)
+      local b = ffi.cast(glFloatp, b)
+      r[0] = b[0]*a[0]  + b[1]*a[1]  + b[2]*a[2]  + b[3]*a[3]
+      r[1] = b[0]*a[4]  + b[1]*a[5]  + b[2]*a[6]  + b[3]*a[9]
+      r[2] = b[0]*a[8]  + b[1]*a[9]  + b[2]*a[10] + b[3]*a[11]
+      return ret
     end
     local ret = mat4()
     local r = ffi.cast(glFloatp, ret)
@@ -161,11 +170,12 @@ mat4 = ffi.metatype('GLmat4', {
       return mat2(m.m11, m.m21,
                   m.m12, m.m22)
     elseif i == 't' then
+      -- NOTE: no performance benefit turning to float *
       return mat4(m.m11, m.m12, m.m13, m.m14,
                   m.m21, m.m22, m.m23, m.m24,
                   m.m31, m.m32, m.m33, m.m34,
                   m.m41, m.m42, m.m43, m.m44)
-     -- http://stackoverflow.com/questions/1148309/inverting-a-4x4-matrix
+    -- http://stackoverflow.com/questions/1148309/inverting-a-4x4-matrix
     elseif i == 'det' then
       local i1 =  m.m22*m.m33*m.m44 - m.m22*m.m43*m.m34 - m.m23*m.m32*m.m44 + m.m23*m.m42*m.m34 + m.m24*m.m32*m.m43 - m.m24*m.m42*m.m33
       local i2 = -m.m12*m.m33*m.m44 + m.m12*m.m43*m.m34 + m.m13*m.m32*m.m44 - m.m13*m.m42*m.m34 - m.m14*m.m32*m.m43 + m.m14*m.m42*m.m33
