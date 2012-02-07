@@ -56,8 +56,8 @@ mat2 = ffi.metatype('GLmat2', {
     end
     return nil
   end,
-  __tostring = function(m) return string.format("[%2.12g %2.12g]\n[%2.12g %2.12g]",
-                                                   m.m11, m.m21,    m.m12, m.m22) end
+  __tostring = function(m) return string.format("[%4.1f %4.1f ]\n[%4.1f %4.1f ]",
+                                                  m.m11, m.m21,   m.m12, m.m22) end
 })
 local mat3
 mat3 = ffi.metatype('GLmat3', {
@@ -101,8 +101,8 @@ mat3 = ffi.metatype('GLmat3', {
     return nil
   end,
   __tostring = function(m)
-    return string.format("[%2.12g %2.12g %2.12g]\n[%2.12g %2.12g %2.12g]\n[%2.12g %2.12g %2.12g]",
-                            m.m11, m.m21, m.m31,    m.m12, m.m22, m.m32,    m.m13, m.m23, m.m33)
+    return string.format("[%4.1f %4.1f %4.1f ]\n[%4.1f %4.1f %4.1f ]\n[%4.1f %4.1f %4.1f ]",
+                           m.m11, m.m21, m.m31,  m.m12, m.m22, m.m32,  m.m13, m.m23, m.m33)
     end
 })
 local mat4
@@ -212,8 +212,8 @@ mat4 = ffi.metatype('GLmat4', {
     return nil
   end,
   __tostring = function(m)
-    return string.format("[%2.12g %2.12g %2.12g %2.12g]\n[%2.12g %2.12g %2.12g %2.12g]\n[%2.12g %2.12g %2.12g %2.12g]\n[%2.12g %2.12g %2.12g %2.12g]",
-                            m.m11, m.m21, m.m31, m.m41,    m.m12, m.m22, m.m32, m.m42,    m.m13, m.m23, m.m33, m.m43,    m.m14, m.m24, m.m34, m.m44)
+    return string.format("[%4.1f %4.1f %4.1f %4.1f ]\n[%4.1f %4.1f %4.1f %4.1f ]\n[%4.1f %4.1f %4.1f %4.1f ]\n[%4.1f %4.1f %4.1f %4.1f ]",
+                           m.m11, m.m21, m.m31, m.m41, m.m12, m.m22, m.m32, m.m42, m.m13, m.m23, m.m33, m.m43, m.m14, m.m24, m.m34, m.m44)
     end
 })
 

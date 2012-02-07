@@ -169,14 +169,15 @@ gl.utDisplayFunc(function ()
   local modelView = view * model
   normalProgram.modelViewMatrix           = modelView
   normalProgram.modelViewProjectionMatrix = projection * modelView
-  for y = -10, 10 do
-    for x = -10, 10 do
-      local modelView = view * model * gl.translate(x * 2, y * 2, 0)
-      normalProgram.modelViewMatrix           = modelView
-      normalProgram.modelViewProjectionMatrix = projection * modelView
-      cube()
-    end
-  end
+  cube()
+  -- for y = -10, 10 do
+  --   for x = -10, 10 do
+  --     -- local modelView = view * model * gl.translate(x * 2, y * 2, 0)
+  --     -- normalProgram.modelViewMatrix           = modelView
+  --     -- normalProgram.modelViewProjectionMatrix = projection * modelView
+  --     cube()
+  --   end
+  -- end
   gl.utSwapBuffers()
 end)
 
