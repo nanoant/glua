@@ -1,6 +1,7 @@
 local gl   = require 'matrix'
 local math = require 'math'
 local iter = 2000000 -- 20M
+print(string.format('testing %d interations:', iter)); io.stdout:flush()
 
 -- matrix * constant
 local a = gl.identity
@@ -42,11 +43,19 @@ print(string.format('matrix transpose  in %f seconds', os.clock()-start)); io.st
 -- print(a)
 
 -- matrix inverse
-local a = gl.identity
-local b = gl.translate(0,0,-.001)
+local a = gl.translate(0,0,-.001)
 local start = os.clock()
 for i = 1, iter do
   a = a.inv
 end
 print(string.format('matrix inverse    in %f seconds', os.clock()-start)); io.stdout:flush()
+-- print(a)
+
+-- matrix det
+local a = gl.translate(0,0,-.001)
+local start = os.clock()
+for i = 1, iter do
+  d = a.det
+end
+print(string.format('matrix det        in %f seconds', os.clock()-start)); io.stdout:flush()
 -- print(a)
