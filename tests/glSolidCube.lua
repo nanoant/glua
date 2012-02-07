@@ -8,6 +8,7 @@
 local gl        = require 'gl'
 local gui       = require 'gui'
 local primitive = require 'primitive'
+local time      = require 'time'
 
 -- http://www.tutorialsforblender3d.com/Textures/Bricks-NormalMap/Bricks_Normal_1.html
 -- http://www.tutorialsforblender3d.com/Textures/Wall-NormalMap/Wall_Normal_1.html
@@ -128,7 +129,7 @@ gl.utReshapeFunc(function(w, h)
 end)
 
 -- idle callbacks
-local frames, clock
+local frames, start
 local rotateCallback = gl.utIdleCallback(function()
   light = gl.rotatey(.002) * light
   normalProgram.lightMatrix = light
@@ -153,10 +154,11 @@ gl.utMouseFunc(function(button, state, x, y)
   if button == gl.UT_RIGHT_BUTTON then
     if state == gl.UT_DOWN then
       frames = 0
-      clock  = os.clock()
+      start  = time()
       gl.utIdleFunc(rotateCallback)
     else
-      print((frames / (os.clock() - clock))..' FPS')
+      local sec = start.since
+      print(string.format('%.2f FPS %.2f sec', frames / sec, sec)); io.stdout:flush()
       gl.utIdleFunc(nil)
     end
   end
