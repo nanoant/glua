@@ -118,12 +118,12 @@ mat4 = ffi.metatype('GLmat4', {
       for i = 0, 15, 4 do
         -- unrolling:
         -- for j = 0, 3 do
-        --   r[i+j] = b[i]*a[j] + b[i+1]*a[j+4] + b[i+2]*a[j+8] + b[i+3]*a[j+12]
+        --   r[i+j] = a[i]*b[j] + a[i+1]*b[j+4] + a[i+2]*b[j+8] + a[i+3]*b[j+12]
         -- end
-        r[i]   = b[i]*a[0] + b[i+1]*a[4] + b[i+2]*a[8]  + b[i+3]*a[12]
-        r[i+1] = b[i]*a[1] + b[i+1]*a[5] + b[i+2]*a[9]  + b[i+3]*a[13]
-        r[i+2] = b[i]*a[2] + b[i+1]*a[6] + b[i+2]*a[10] + b[i+3]*a[14]
-        r[i+3] = b[i]*a[3] + b[i+1]*a[7] + b[i+2]*a[11] + b[i+3]*a[15]
+        r[i]   = a[i]*b[0] + a[i+1]*b[4] + a[i+2]*b[8]  + a[i+3]*b[12]
+        r[i+1] = a[i]*b[1] + a[i+1]*b[5] + a[i+2]*b[9]  + a[i+3]*b[13]
+        r[i+2] = a[i]*b[2] + a[i+1]*b[6] + a[i+2]*b[10] + a[i+3]*b[14]
+        r[i+3] = a[i]*b[3] + a[i+1]*b[7] + a[i+2]*b[11] + a[i+3]*b[15]
       end
       return ret
     elseif ffi.istype(vec4, b) then
