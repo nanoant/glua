@@ -72,9 +72,9 @@ mat3 = ffi.metatype('GLmat3', {
                   a.m12*b.x + a.m22*b.y + a.m32*b.z,
                   a.m13*b.x + a.m23*b.y + a.m33*b.z)
     end
-    return mat3(m.m11 * b, m.m21 * b, m.m31 * b,
-                m.m12 * b, m.m22 * b, m.m32 * b,
-                m.m13 * b, m.m23 * b, m.m33 * b)
+    return mat3(a.m11 * b, a.m21 * b, a.m31 * b,
+                a.m12 * b, a.m22 * b, a.m32 * b,
+                a.m13 * b, a.m23 * b, a.m33 * b)
   end,
   __index = function(m, i)
     if i == 'mat2' then
