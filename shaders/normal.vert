@@ -46,8 +46,13 @@ void main()
 	// http://www.ozone3d.net/tutorials/bump_mapping_p4.php
 	// we do not use non-uniform scaling, so we can use modelViewMatrix directly
 	// instead inverse-transpose
-	vec3 n = mat3(modelViewMatrix) * normal;
-	vec3 t = normalize(mat3(modelViewMatrix) * tangent());
+#if __VERSION__ >= 150
+	mat3 modelViewMatrix3 = mat3(modelViewMatrix);
+#else
+	mat3 modelViewMatrix3 = mat3(modelViewMatrix[0].xyz, modelViewMatrix[1].xyz, modelViewMatrix[2].xyz);
+#endif
+	vec3 n = modelViewMatrix3 * normal;
+	vec3 t = normalize(modelViewMatrix3 * tangent());
 	vec3 b = cross(n, t);
 
 	vec3 vertex = vec3(modelViewMatrix * vec4(position, 1));
