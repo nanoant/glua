@@ -28,7 +28,6 @@ local start = os.clock()
 for i = 1, iter do
   a = a * b
 end
--- print(a)
 print(string.format('matrix * matrix   in %f seconds', os.clock()-start)); io.stdout:flush()
 
 -- matrix transpose
