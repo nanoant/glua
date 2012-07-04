@@ -43,7 +43,7 @@ gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 -- load shaders
 local guiProgram = gl.program(guiShader)
 guiProgram()
-gl.Uniform4f(guiProgram.color,    0, 0, 0, 1)
+guiProgram.color = {0, 0, 0, 1}
 
 local text
 local quad = {
