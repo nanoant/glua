@@ -18,8 +18,8 @@ local start = os.clock()
 for i = 1, iter do
   v = a * v
 end
--- print(v)
 print(string.format('matrix * vector   in %f seconds', os.clock()-start)); io.stdout:flush()
+-- print(v)
 
 -- matrix * matrix
 local a = gl.identity

@@ -115,8 +115,8 @@ local cube = primitive.cube(normalProgram)
 
 -- setup matrices
 local projection = gl.identity
-local view       = gl.translate(0,0,-4)
--- local view       = gl.translate(0,0,-24)
+-- local view       = gl.translate(0,0,-4)
+local view       = gl.translate(0,0,-24)
 local model      = gl.identity
 local light      = gl.identity
 
@@ -168,14 +168,14 @@ end)
 -- main drawing function
 gl.utDisplayFunc(function ()
   gl.Clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT)
-  -- for y = -10, 10 do
-    -- for x = -10, 10 do
-      local modelView = view * model -- * gl.translate(x * 2, y * 2, 0)
+  for y = -10, 10 do
+    for x = -10, 10 do
+      local modelView = view * model * gl.translate(x * 2000, y * 2000, 0)
       normalProgram.modelViewMatrix           = modelView
       normalProgram.modelViewProjectionMatrix = projection * modelView
       cube()
-    -- end
-  -- end
+    end
+  end
   gl.utSwapBuffers()
 end)
 

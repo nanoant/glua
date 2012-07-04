@@ -382,14 +382,47 @@ function programMT:__index(uniform)
   return location
 end
 
+local glMatrix4fv = glFloatv(16)
+local glMatrix3fv = glFloatv(9)
+local glMatrix2fv = glFloatv(4)
+
 function programMT:__newindex(uniform, value)
   local location = self[uniform]
   if ffi.istype(gl.mat4, value) then
-    gl.UniformMatrix4fv(location,  1, gl.TRUE, value.gl)
+    glMatrix4fv[0]  = value.m11
+    glMatrix4fv[1]  = value.m21
+    glMatrix4fv[2]  = value.m31
+    glMatrix4fv[3]  = value.m41
+    glMatrix4fv[4]  = value.m12
+    glMatrix4fv[5]  = value.m22
+    glMatrix4fv[6]  = value.m32
+    glMatrix4fv[7]  = value.m42
+    glMatrix4fv[8]  = value.m13
+    glMatrix4fv[9]  = value.m23
+    glMatrix4fv[10] = value.m33
+    glMatrix4fv[11] = value.m43
+    glMatrix4fv[12] = value.m14
+    glMatrix4fv[13] = value.m24
+    glMatrix4fv[14] = value.m34
+    glMatrix4fv[15] = value.m44
+    gl.UniformMatrix4fv(location,  1, gl.TRUE, glMatrix4fv)
   elseif ffi.istype(gl.mat3, value) then
-    gl.UniformMatrix3fv(location,  1, gl.TRUE, value.gl)
+    glMatrix3fv[0] = value.m11
+    glMatrix3fv[1] = value.m21
+    glMatrix3fv[2] = value.m31
+    glMatrix3fv[3] = value.m12
+    glMatrix3fv[4] = value.m22
+    glMatrix3fv[5] = value.m32
+    glMatrix3fv[6] = value.m13
+    glMatrix3fv[7] = value.m23
+    glMatrix3fv[8] = value.m33
+    gl.UniformMatrix3fv(location,  1, gl.TRUE, glMatrix3fv)
   elseif ffi.istype(gl.mat2, value) then
-    gl.UniformMatrix2fv(location,  1, gl.TRUE, value.gl)
+    glMatrix2fv[0] = value.m11
+    glMatrix2fv[1] = value.m21
+    glMatrix2fv[2] = value.m12
+    glMatrix2fv[3] = value.m22
+    gl.UniformMatrix2fv(location,  1, gl.TRUE, glMatrix2fv)
   elseif type(value) == 'table' then
     gl['Uniform'..#value..'f'](location, unpack(value))
   else
