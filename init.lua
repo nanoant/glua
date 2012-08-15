@@ -1,21 +1,21 @@
 -- LuaJIT FFI extensions for OpenGL & GLUT
 -- Created by: Adam Strzelecki http://www.nanoant.com/
 
-local lib = require 'gl.glut'
+local lib = require 'glua.gl.glut'
 local ffi = require 'ffi'
 local bit = require 'bit'
-local gl  = require 'matrix' -- inherit matrix operators
+local gl  = require 'glua.matrix' -- inherit matrix operators
 
 -- OSX compatiblity extensions
 local onOSX = false
 if ffi.os == 'OSX' then
-  require 'mac.glext'
+  require 'glua.mac.glext'
   onOSX = true
 end
 
 -- load image library, use CoreGraphics on Mac
 -- and libpng on other platforms
-local imglib = require(onOSX and 'mac.CoreGraphics' or 'lib.png')
+local imglib = require(onOSX and 'glua.mac.CoreGraphics' or 'glua.lib.png')
 
 -- index metamethod removing gl prefix for funtions
 -- and GL_ prefix for constants
@@ -388,7 +388,15 @@ local glMatrix2fv = glFloatv(4)
 
 function programMT:__newindex(uniform, value)
   local location = self[uniform]
-  if ffi.istype(gl.mat4, value) then
+  if ffi.istype(glFloatv, value) then
+    if ffi.sizeof(value) == 64 then
+      gl.UniformMatrix4fv(location,  1, gl.TRUE, value)
+    elseif ffi.sizeof(value) == 36 then
+      gl.UniformMatrix3fv(location,  1, gl.TRUE, value)
+    elseif ffi.sizeof(value) == 16 then
+      gl.UniformMatrix2fv(location,  1, gl.TRUE, value)
+    end
+  elseif ffi.istype(gl.mat4, value) then
     glMatrix4fv[0]  = value.m11
     glMatrix4fv[1]  = value.m21
     glMatrix4fv[2]  = value.m31

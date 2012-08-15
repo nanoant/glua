@@ -1,5 +1,7 @@
-local ft    = require 'lib.ft'
-local iconv = require 'lib.iconv'
+package.path = "../?.lua;../?/init.lua;" .. package.path
+
+local ft    = require 'glua.lib.ft'
+local iconv = require 'glua.lib.iconv'
 local face  = ft.New_Face '/System/Library/Fonts/LucidaGrande.ttc'
 local size  = 12
 local ic    = iconv.open('UCS-2LE', 'UTF-8')

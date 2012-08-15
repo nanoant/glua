@@ -9,7 +9,7 @@
 
 local ffi = require 'ffi'
 
-require 'gl.gl3'
+require 'glua.gl.gl3'
 
 ffi.cdef[[
 /* constants */
@@ -438,10 +438,14 @@ end
 
 -- initialize GLUT
 local argvp = {}
-for i = 0, #arg do argvp[#argvp+1] = ffi.new("char[?]", #arg[i]+1, arg[i]) end
+if arg ~= nil then
+  for i = 0, #arg do argvp[#argvp+1] = ffi.new("char[?]", #arg[i]+1, arg[i]) end
+end
 local argv = ffi.new("char *[?]", #argvp, argvp)
 local argcp = ffi.new("int[1]", #argvp)
 glut.glutInit(argcp, argv)
-for i = #arg, argcp[0] do table.remove(arg, i) end
-for i = 0, argcp[0]-1  do arg[i] = ffi.string(argv[i]) end
+if arg ~= nil then
+  for i = #arg, argcp[0] do table.remove(arg, i) end
+  for i = 0, argcp[0]-1  do arg[i] = ffi.string(argv[i]) end
+end
 return glut

@@ -1,4 +1,4 @@
-local cf  = require 'mac.CoreFoundation'
+local cf  = require 'glua.mac.CoreFoundation'
 local ffi = require 'ffi'
 
 ffi.cdef [[

@@ -1,5 +1,5 @@
 local ffi  = require 'ffi'
-local gl   = require 'gl.gl3'
+local gl   = require 'glua.gl.gl3'
 
 ffi.cdef [[
 typedef struct { double x, y;       } vec2;

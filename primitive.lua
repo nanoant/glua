@@ -1,4 +1,4 @@
-local gl = require 'gl'
+local gl = require 'glua'
 
 local primitive = {}
 

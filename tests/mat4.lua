@@ -1,3 +1,5 @@
+package.path = "../?.lua;../?/init.lua;" .. package.path
+
 local gl   = require 'matrix'
 local math = require 'math'
 local iter = 2000000 -- 2M

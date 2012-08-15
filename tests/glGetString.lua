@@ -1,6 +1,8 @@
 #!/usr/bin/env luajit
 
-local gl = require('gl')
+package.path = "../?.lua;../?/init.lua;" .. package.path
+
+local gl = require('glua')
 
 local core = true
 for i = 1, #arg do

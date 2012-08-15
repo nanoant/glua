@@ -1,5 +1,7 @@
-local cf = require 'mac.CoreFoundation'
-local cg = require 'mac.CoreGraphics'
+package.path = "../?.lua;../?/init.lua;" .. package.path
+
+local cf = require 'glua.mac.CoreFoundation'
+local cg = require 'glua.mac.CoreGraphics'
 
 print('exe: '..cf.tostring(cf.ExecutableURL()))
 print('res: '..cf.tostring(cf.ResourcesURL()))

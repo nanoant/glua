@@ -1,5 +1,5 @@
 local ffi  = require 'ffi'
-local gl   = require 'gl.gl3'
+local gl   = require 'glua.gl.gl3'
 local math = require 'math'
 local bit  = require 'bit'
 local sin, cos = math.sin, math.cos
@@ -22,7 +22,7 @@ typedef struct {
 } mat4;
 ]]
 
-local M = require 'vector'
+local M = require 'glua.vector'
 
 local vec2, vec3, vec4 = M.vec2, M.vec3, M.vec4
 

@@ -5,10 +5,13 @@
 --
 -- Usage: Use left mouse button to rotate cube, right mouse button to rotate lights
 
-local gl        = require 'gl'
-local gui       = require 'gui'
-local primitive = require 'primitive'
+package.path = "../?.lua;../?/init.lua;" .. package.path
+
+local gl        = require 'glua'
+local gui       = require 'glua.gui'
+local primitive = require 'glua.primitive'
 local time      = require 'time'
+local ffi       = require 'ffi'
 
 -- http://www.tutorialsforblender3d.com/Textures/Bricks-NormalMap/Bricks_Normal_1.html
 -- http://www.tutorialsforblender3d.com/Textures/Wall-NormalMap/Wall_Normal_1.html
@@ -46,7 +49,7 @@ local lights = {
 }
 
 -- initialize display (note: glut module calls glutInit)
-local core = false
+local core = true
 for i = 1, #arg do
   if     arg[i]:match('^--compat$') then core = false
   elseif arg[i]:match('^--help$')   then
@@ -57,7 +60,7 @@ for i = 1, #arg do
 end
 if core then
   gl.utInitContextVersion(3, 2)
-  gl.utInitContextFlags(gl.UT_FORWARD_COMPATIBLE + gl.UT_DEBUG)
+  gl.utInitContextFlags(gl.UT_FORWARD_COMPATIBLE)
   gl.utInitContextProfile(gl.UT_CORE_PROFILE)
 end
 gl.utInitDisplayString('rgba double depth>=16 samples~8')
@@ -68,6 +71,7 @@ gl.utInitWindowPosition(100, 100)
 local window = gl.utCreateWindow("Solid Cube")
 local width, height
 local buttons = {}
+-- gl.utFullScreen()
 
 -- set up background color
 gl.ClearColor(.2, .2, .2, 0)
@@ -122,11 +126,22 @@ local light      = gl.identity
 
 normalProgram.lightMatrix = light
 
+local modelViewMatrix = {}
+local modelViewProjectionMatrix = {}
+
 -- called upon window resize & creation
 gl.utReshapeFunc(function(w, h)
   width, height = w, h
   projection = gl.perspective(60, w / h, .1, 1000)
   gl.Viewport(0, 0, w, h)
+
+  for y = -40, 40 do
+    for x = -40, 40 do
+      local modelView = view * model * gl.translate(x * 3, y * 3, 0)
+      modelViewMatrix[x*1000+y]           = modelView.gl
+      modelViewProjectionMatrix[x*1000+y] = (projection * modelView).gl
+    end
+  end
 end)
 
 -- idle callbacks
@@ -168,11 +183,13 @@ end)
 -- main drawing function
 gl.utDisplayFunc(function ()
   gl.Clear(gl.COLOR_BUFFER_BIT + gl.DEPTH_BUFFER_BIT)
-  for y = -10, 10 do
-    for x = -10, 10 do
-      local modelView = view * model * gl.translate(x * 2000, y * 2000, 0)
+  for y = -40, 40 do
+    for x = -40, 40 do
+      local modelView = view * model * gl.translate(x * 3, y * 3, 0)
       normalProgram.modelViewMatrix           = modelView
       normalProgram.modelViewProjectionMatrix = projection * modelView
+      normalProgram.modelViewMatrix           = modelViewMatrix[x*1000+y]
+      normalProgram.modelViewProjectionMatrix = modelViewProjectionMatrix[x*1000+y]
       cube()
     end
   end

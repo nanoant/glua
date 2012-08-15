@@ -1,7 +1,7 @@
-local gl    = require 'gl'
+local gl    = require 'glua'
 local ffi   = require 'ffi'
-local ft    = require 'lib.ft'
-local iconv = require 'lib.iconv'
+local ft    = require 'glua.lib.ft'
+local iconv = require 'glua.lib.iconv'
 local ic    = iconv.open('UCS-2LE', 'UTF-8')
 
 local gui = {}
