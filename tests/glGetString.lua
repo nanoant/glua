@@ -38,7 +38,8 @@ print('      GL_MAX_TEXTURE_IMAGE_UNITS = '..gl.Get(gl.MAX_TEXTURE_IMAGE_UNITS))
 print('             GL_MAX_TEXTURE_SIZE = '..gl.Get(gl.MAX_TEXTURE_SIZE))
 print('GL_MAX_VERTEX_UNIFORM_COMPONENTS = '..gl.Get(gl.MAX_VERTEX_UNIFORM_COMPONENTS))
 
-if tonumber(gl.GetString(gl.SHADING_LANGUAGE_VERSION)) < 1.50 then
+local version = tonumber(gl.GetString(gl.SHADING_LANGUAGE_VERSION))
+if version == nil or version < 1.50 then
   print()
   print('GL_EXTENSIONS = '..gl.GetString(gl.EXTENSIONS))
 end

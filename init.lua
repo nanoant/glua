@@ -364,7 +364,7 @@ function gl.program(shaderPaths)
     -- do not append new line if it is not necessary
     if glCoreProfile and not source:find('^%s*#version') then
       local version = tonumber(gl.GetString(gl.SHADING_LANGUAGE_VERSION))
-      source = string.format('#version %d core%s%s', version * 100, source:find('^%s*/[*/]') and ' ' or "\n", source)
+      if version ~= nil then source = string.format('#version %d core%s%s', version * 100, source:find('^%s*/[*/]') and ' ' or "\n", source) end
     end
     local shader = gl.CreateShader(type)
     gl.ShaderSource(shader, source)
