@@ -8,12 +8,6 @@ ABCDEFGHIJKLMNOPQRSTWXYZ abcdefghijklmnopqrstwxyz 01234567890 ~!@#$%^&*()
 ]]
 lorem = lorem..lorem..lorem..lorem..lorem..lorem
 
-
-local guiShader = {
-  [gl.VERTEX_SHADER]   = 'shaders/gui.vert',
-  [gl.FRAGMENT_SHADER] = 'shaders/gui.frag'
-}
-
 -- initialize display (note: glut module calls glutInit)
 local core = true
 for i = 1, #arg do
@@ -43,8 +37,10 @@ gl.ClearColor(1, 1, 1, 1)
 gl.Enable(gl.BLEND)
 gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 -- load shaders
-local guiProgram = gl.program(guiShader)
-guiProgram()
+local guiProgram = gl.program{
+  [gl.VERTEX_SHADER]   = gl.path('glua.shaders.gui', 'vert'),
+  [gl.FRAGMENT_SHADER] = gl.path('glua.shaders.gui', 'frag')
+}()
 guiProgram.color = {0, 0, 0, 1}
 
 local text

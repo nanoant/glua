@@ -67,6 +67,14 @@ ffi.cdef [[
 function gl.utTimerCallback(f) return ffi.cast('glutTimerCallback', f) end
 function gl.utIdleCallback(f)  return ffi.cast('glutIdleCallback', f)  end
 
+-- PATH UTIL -----------------------------------------------------------------
+
+function gl.path(name, type)
+  type = type or ''
+  if not type:find('^[.]') then type = '.' .. type end
+  return package.searchpath(name, string.gsub(package.path, '[.]lua', type))
+end
+
 -- ERRORS --------------------------------------------------------------------
 
 glErrorMap = {
@@ -444,6 +452,7 @@ end
 
 function programMT:__call()
   gl.UseProgram(self.gl)
+  return self
 end
 
 -- TEXTURES ------------------------------------------------------------------
@@ -500,6 +509,7 @@ end
 function textureMT:__call(target)
   if target then gl.ActiveTexture(gl.TEXTURE0 + target) end
   gl.BindTexture(self.gl)
+  return self
 end
 
 function gl.textures(paths)
@@ -658,6 +668,7 @@ function arrayMT:__call(mode, from, size)
   size = size or self.size
   gl.BindVertexArray(self.gl)
   gl.DrawArrays(mode, from, size)
+  return self
 end
 
 return gl

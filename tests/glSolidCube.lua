@@ -10,23 +10,9 @@ package.path = "../?.lua;../?/init.lua;" .. package.path
 local gl        = require 'glua'
 local gui       = require 'glua.gui'
 local primitive = require 'glua.primitive'
-local time      = require 'time'
+local time      = require 'glua.time'
 local ffi       = require 'ffi'
 
--- http://www.tutorialsforblender3d.com/Textures/Bricks-NormalMap/Bricks_Normal_1.html
--- http://www.tutorialsforblender3d.com/Textures/Wall-NormalMap/Wall_Normal_1.html
-local textures = {
-  [0] = 'textures/GraniteWall-ColorMap.png',
-  [1] = 'textures/GraniteWall-NormalMap.png'
-}
-local normalShader = {
-  [gl.VERTEX_SHADER]   = 'shaders/normal.vert',
-  [gl.FRAGMENT_SHADER] = 'shaders/normal.frag'
-}
-local guiShader = {
-  [gl.VERTEX_SHADER]   = 'shaders/gui.vert',
-  [gl.FRAGMENT_SHADER] = 'shaders/gui.frag'
-}
 local lights = {
   {
     position = {  1.3, 1.3, 1.3  },
@@ -81,11 +67,18 @@ gl.Enable(gl.CULL_FACE)
 gl.Enable(gl.DEPTH_TEST)
 
 -- set up textures
-local textures = gl.textures(textures)
+-- http://www.tutorialsforblender3d.com/Textures/Bricks-NormalMap/Bricks_Normal_1.html
+-- http://www.tutorialsforblender3d.com/Textures/Wall-NormalMap/Wall_Normal_1.html
+local textures = gl.textures{
+  [0] = gl.path('glua.textures.GraniteWall-ColorMap',  'png'),
+  [1] = gl.path('glua.textures.GraniteWall-NormalMap', 'png')
+}
 
 -- load shaders
-local normalProgram = gl.program(normalShader)
-normalProgram()
+local normalProgram = gl.program{
+  [gl.VERTEX_SHADER]   = gl.path('glua.shaders.normal', 'vert'),
+  [gl.FRAGMENT_SHADER] = gl.path('glua.shaders.normal', 'frag')
+}()
 
 -- set up lights
 gl.Uniform1i(normalProgram.numLights, #lights)
