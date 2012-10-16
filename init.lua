@@ -72,7 +72,7 @@ function gl.utIdleCallback(f)  return ffi.cast('glutIdleCallback', f)  end
 function gl.path(name, type)
   type = type or ''
   if not type:find('^[.]') then type = '.' .. type end
-  return package.searchpath(name, string.gsub(package.path, '[.]lua', type))
+  return package.searchpath(name, string.gsub(package.path, '[.]lua', type), '.')
 end
 
 -- ERRORS --------------------------------------------------------------------
