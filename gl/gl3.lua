@@ -1446,7 +1446,7 @@ enum {
   GL_CONDITION_SATISFIED            = 0x911C,
   GL_WAIT_FAILED                    = 0x911D,
   GL_SYNC_FLUSH_COMMANDS_BIT        = 0x00000001,
-  GL_TIMEOUT_IGNORED                = 0xFFFFFFFFFFFFFFFFull,
+/* GL_TIMEOUT_IGNORED                = 0xFFFFFFFFFFFFFFFFull, */
 /* #endif */
 
 /* #ifndef GL_ARB_texture_multisample */

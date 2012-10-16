@@ -20,7 +20,7 @@ const CFAllocatorRef kCFAllocatorDefault;
 
 // CFString
 typedef enum {
-  CFStringEncodingMacRoman = 0L,
+  CFStringEncodingMacRoman = 0,
   CFStringEncodingMacJapanese = 1,
   CFStringEncodingMacChineseTrad = 2,
   CFStringEncodingMacKorean = 3,
