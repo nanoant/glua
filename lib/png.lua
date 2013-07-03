@@ -55,7 +55,7 @@ enum {
   PNG_INFO_sPLT = 0x2000,
   PNG_INFO_sCAL = 0x4000,
   PNG_INFO_IDAT = 0x8000
-}
+};
 enum {
   PNG_COLOR_MASK_PALETTE    = 1,
   PNG_COLOR_MASK_COLOR      = 2,
